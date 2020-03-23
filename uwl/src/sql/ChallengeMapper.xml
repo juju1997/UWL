@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ChallengeMapper">
+
+	<!-- Challenge(도전과제) table  assosiation 필요하면 추가할 것.-->
+	<resultMap id="challengSelectMap" type="challenge">
+		<result property="challNo" 			column="chall_no" 			jdbcType="NUMERIC"/>
+		<result property="challCategory" 			column="chall_category" 			jdbcType="VARCHAR"/>
+		<result property="challTitle" 			column="chall_title" 			jdbcType="VARCHAR"/>
+		<result property="challContent" 			column="chall_content" 			jdbcType="VARCHAR"/>
+		<result property="challDate" 			column="chall_date" 			jdbcType="DATE"/>
+		<result property="challReward" 	column="chall_reward" 		jdbcType="NUMERIC" />
+		<result property="viewStatus" 	column="view_status" 		jdbcType="VARCHAR" />
+		<result property="postCommentComplete" 	column="post_comment_complete" 		jdbcType="NUMERIC" />
+		<result property="detailCategory" 	column="detail_category" 		jdbcType="VARCHAR" />
+		<result property="weeklyStart" 	column="weekly_start" 		jdbcType="DATE" />
+		<result property="weeklyEnd" 	column="weekly_end" 		jdbcType="DATE" />
+		
+		<!-- reward -->
+		<result property="reward.variableDate" 	column="variable_date" 		jdbcType="DATE" />
+		<!-- 가상컬럼과 바인딩 -->
+		<!-- 이전글 이후글 가상 컬럼과 바인딩 -->
+		<result property="preChallNo" 			column="pre_chall_no" 			jdbcType="NUMERIC"/>
+		<result property="nextChallNo" 			column="next_chall_no" 			jdbcType="NUMERIC"/>
+		<result property="preChallTitle" 			column="pre_chall_title" 			jdbcType="VARCHAR"/>
+		<result property="nextChallTitle" 			column="next_chall_title" 			jdbcType="VARCHAR"/>
+		
+		<association property="post" javaType="post">
+			
+			<id property="userId" column="user_id" jdbcType="VARCHAR"/>
+
+			
+	 		<result property="postNo" column="post_no" jdbcType="VARCHAR"/>
+	 		<result property="postTitle" column="post_title" jdbcType="VARCHAR"/>
+	 		<result property="postContent" column="post_content" jdbcType="VARCHAR"/>
+	 		<result property="postDate" column="post_date" jdbcType="DATE"/>
+	 		<result property="uploadFileName" column="uploadfile_name" jdbcType="VARCHAR"/>
+	 		<result property="hitCount" column="hit_count" jdbcType="NUMERIC"/>
+	 		<result property="likeCount" column="like_count" jdbcType="NUMERIC"/>
+	 		<result property="commentCount" column="comment_count" jdbcType="NUMERIC"/>
+	 		<result property="viewStatus" column="view_status" jdbcType="VARCHAR"/>
+	 		<result property="postCategoryNo" column="post_category_no" jdbcType="VARCHAR"/>
+	 		<result property="gatherCategoryNo" column="gather_category_no" jdbcType="VARCHAR"/>
+	 		<result property="questionStatus" column="question_status" jdbcType="VARCHAR"/>
+	 		<result property="place" column="place" jdbcType="VARCHAR"/>
+	 		<result property="replyPostNo" column="reply_post_no" jdbcType="NUMERIC"/>
+	 		<result property="nickName" column="nickname" jdbcType="VARCHAR"/>	
+		
+		</association>
+		
+		<association property="commentt" javaType="commentt">
+		
+			<id property="userId" column="user_id" jdbcType="VARCHAR"/>
+		
+			<result property="commentNo" column="comment_no" jdbcType="NUMERIC"/>
+			<result property="postNo" column="post_no" jdbcType="NUMERIC"/>
+			<result property="commentContent" column="comment_content" jdbcType="VARCHAR"/>
+			<result property="commentDate" column="comment_date" jdbcType="DATE"/>
+			<result property="commentStatus" column="comment_status" jdbcType="VARCHAR"/>
+			<result property="likeCount" column="like_count" jdbcType="NUMERIC"/>
+		</association>
+		
+	</resultMap>
+	
+	<!-- addCahllenge 시 카테고리를 불러오는 작업 -->
+	<resultMap id="challengCategorySelectMap" type="challenge">
+		<result property="challCategory" column="chall_category" jdbcType="VARCHAR"/>
+		<result property="detailCategory" column="chall_detail_category" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<!-- Challenge -->
+	<!-- SQL : INSERT -->
+	<insert 	id="addChallenge"		parameterType="challenge" >
+	 	INSERT INTO challenge(	chall_no,
+								chall_category,
+								chall_title,
+								chall_content,
+								chall_date,
+								chall_reward,
+								view_status,
+								detail_category
+								<if test="challCategory == 3">
+									, post_comment_complete
+								</if>
+								) 
+			VALUES(seq_challenge_chall_no.NEXTVAL,
+				#{challCategory:VARCHAR},
+				#{challTitle},
+				#{challContent:VARCHAR},SYSDATE,
+				#{challReward:NUMERIC},
+				'1',
+				#{detailCategory:VARCHAR}
+			<if test="challCategory == 3">
+				, #{postCommentComplete:NUMERIC}
+			</if>)
+	 </insert>
+	 
+	<insert 	id="addWeeklyStart"		parameterType="challenge" >
+	 	INSERT INTO challenge(chall_no, view_status ,weekly_start) VALUES(seq_challenge_chall_no.NEXTVAL, '3', #{weeklyStart})
+	</insert>
+	 
+	 <!-- SQL : UPDATE(수정) -->
+	<update	id="updateChallenge"	parameterType="challenge" >
+	   	UPDATE challenge 
+	   	<set>
+			chall_category = #{challCategory},
+			chall_title = #{challTitle},
+			chall_content = #{challContent},
+			chall_reward = #{challReward},
+			detail_category = #{detailCategory:VARCHAR}
+			<if test="challCategory != 3">
+				, post_comment_complete = 0
+			</if>
+			<if test="challCategory == 3">
+				, post_comment_complete = #{postCommentComplete:NUMERIC}
+			</if>
+		</set>
+		WHERE chall_no = #{challNo}
+	 </update>
+	 
+	 <!-- SQL : DELETE( 삭제 FLAG(실제삭제 X, DB에는 존재) ) -->
+	<update	id="deleteChallenge"	parameterType="challenge" >
+	   	UPDATE challenge 
+	   	<set>
+			view_status = '3'
+		</set>
+		WHERE chall_no = #{challNo}
+	 </update>
+	 
+	<!-- 주간도전과제 viewStatus를 4번으로 변경하여 고정해줌 --> 
+	<update	id="startChallenge"	parameterType="challenge" >
+	   	UPDATE challenge 
+	   	<set>
+			view_status = '4'
+		</set>
+		WHERE chall_no = #{challNo}
+	 </update>
+	 
+	<!-- 주간도전과제 viewStatus를 4번으로 변경한것을 다시 1번으로 변경해줌 --> 
+	<update	id="resetChallenge"	parameterType="challenge" >
+	   	UPDATE challenge 
+	   	<set>
+			view_status = '1'
+		</set>
+		WHERE chall_no = #{challNo}
+	 </update>
+	 
+	 <!-- SQL : SELECT LIST - Admin 용 오류나면 parameterType 의심 -->
+	 <select  id="getAdminChallengeList"  parameterType="search"	resultMap="challengSelectMap">
+	  	SELECT *
+	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
+ 					FROM ( 	SELECT chall_no,
+									chall_category,
+									chall_title,
+									chall_content,
+									chall_date,
+									chall_reward,
+									view_status,
+									post_comment_complete,
+									detail_category
+						 	FROM challenge
+							WHERE view_status = '1' OR view_status = '4'
+							<if test="searchCondition != null">
+								<where>
+									<if test="searchCondition == 1 and searchKeyword !='' ">
+							 			chall_title LIKE '%'||#{searchKeyword}||'%'
+									</if>
+									<if test="searchCondition == 2 and searchKeyword !='' ">
+							 			chall_content LIKE '%'||#{searchKeyword}||'%'
+									</if>
+								</where>
+							</if>
+			 				ORDER BY chall_date DESC) inner_table
+				WHERE ROWNUM &lt;= #{endRowNum:INTEGER} )
+				WHERE row_seq BETWEEN #{startRowNum:INTEGER} AND #{endRowNum:INTEGER} 
+	 </select>
+	 
+	 <!-- SQL : 주간도전과제 4번인 경우만 view해줌 ===>새로 추가함 -->
+	 <select  id="getWeeklyChallengeList"  resultMap="challengSelectMap">
+	  	SELECT * FROM challenge WHERE view_status = '4'
+	 </select>
+	 
+	 <!-- SQL : SELECT ONE -ADMIN -->
+	 <select  id="getChallengeAdmin"  parameterType="int"	resultMap="challengSelectMap">
+	  	SELECT
+			chall_no,
+			chall_category,
+			chall_title,
+			chall_content,
+			chall_date,
+			chall_reward,
+			view_status,
+			post_comment_complete,
+			detail_category
+		FROM challenge 
+		WHERE chall_no = #{value}
+	 </select>
+	 
+	 <!-- SQL : SELECT ONE  -->
+	 <!-- 엔드데이를 하루로 설정 -->
+	 <select  id="getWeeklyStart" parameterType="challenge" resultMap="challengSelectMap">
+	  	SELECT the_latest.weekly_start,
+				 the_latest.weekly_end
+		FROM (SELECT weekly_start,
+									(weekly_start +1) weekly_end
+						FROM challenge 
+						WHERE weekly_start IS NOT NULL
+						ORDER BY chall_no DESC) the_latest
+		WHERE ROWNUM = 1
+	 </select>
+	 
+	 <!-- SQL : SELECT ONE  -->
+	 <select  id="getDetailCategoryList" 	parameterType="string" 	resultMap="challengCategorySelectMap">
+	  	
+	  	SELECT * FROM challenge_detail_category 
+  				WHERE chall_category = #{value} ORDER BY chall_category
+		
+	 </select>
+	 
+	 <!-- SQL : SELECT LIST- USER용(3개 랜덤 추출) 파라미터타입 필요없지만 검색을 위해 남겨둠 -->
+	 <select  id="getChallengeList" parameterType="challenge" resultMap="challengSelectMap">
+	 	 SELECT * FROM  (SELECT * FROM challenge WHERE weekly_start IS NULL AND view_status = '1'
+                    		 	 ORDER BY dbms_random.value)
+		WHERE ROWNUM &lt;= 3
+	 </select> 
+	 
+	 <!-- SQL : SELECT ONE - USER용 -->
+	 <select  id="getCompleteChallengeList"  parameterType="map"	resultMap="challengSelectMap">
+		SELECT *
+	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
+	  					FROM		(SELECT 
+											c.chall_no,
+											c.chall_category,
+											c.chall_title,
+											c.chall_content,
+											c.chall_reward,
+											r.variable_date,
+											r.user_id,
+											c.view_status
+											FROM reward r, challenge c  
+WHERE r.chall_no = c.chall_no AND r.user_id = #{userId} ORDER BY r.variable_date) inner_table
+						WHERE ROWNUM &lt;= #{search.endRowNum:INTEGER} )
+						WHERE row_seq BETWEEN #{search.startRowNum:INTEGER} AND #{search.endRowNum:INTEGER} 	
+	 </select>
+	 
+	 
+	 <!-- SQL : SELECT ROW Count -->	 
+	 <select  id="getTotalCount"  parameterType="search"	 resultType="int">
+	  	SELECT COUNT(*) FROM(SELECT chall_no,
+									chall_category,
+									chall_title,
+									chall_content,
+									chall_date,
+									chall_reward,
+									view_status,
+									weekly_start FROM challenge
+									WHERE weekly_start IS NULL AND view_status = '1' OR  view_status = '4'
+			 				<if test="searchCondition != null">
+								<where>
+									<if test="searchCondition == 1 and searchKeyword !='' ">
+							 			chall_title LIKE '%'||#{searchKeyword}||'%'
+									</if>
+									<if test="searchCondition == 2 and searchKeyword !='' ">
+							 			chall_content LIKE '%'||#{searchKeyword}||'%'
+									</if>
+								</where>
+							</if>
+			 				ORDER BY chall_date DESC) countTable
+	  	
+	 </select>
+	 
+	 <!-- SQL : SELECT ROW Count -->	 
+	 <select  id="getTotalCountOne"  parameterType="String"	 resultType="int">
+	  	SELECT COUNT(*) FROM(	 SELECT 
+									c.chall_no,
+									c.chall_category,
+									c.chall_title,
+									c.chall_content,
+									c.chall_date,
+									c.chall_reward,
+									r.user_id
+								FROM reward r, challenge c  
+								WHERE r.chall_no = c.chall_no AND r.user_id = #{userId:VARCHAR} ORDER BY r.variable_date desc) countTable
+	 </select>
+	 
+	 <!-- SQL : SELECT ROW Count -->	<!-- 파라미터를 map으로 가져올것. --> 
+	 <select  id="getChallPostCompleteCount"  parameterType="challenge"	 resultType="int">
+	  	
+	  	SELECT COUNT(*) 
+		FROM(	SELECT  p.user_id,
+						p.hit_count,
+						p.comment_count,
+						p.post_category_no,
+						p.post_date,
+						week.weekly_start,
+						week.weekly_end
+						FROM post p, (SELECT the_latest.weekly_start,
+																	the_latest.weekly_end
+													FROM (SELECT weekly_start,
+																(weekly_start + 7) weekly_end
+																	FROM challenge 
+																	WHERE weekly_start IS NOT NULL 
+																	ORDER BY chall_no DESC) the_latest
+												WHERE ROWNUM = 1) week
+		WHERE p.post_date  BETWEEN week.weekly_start  AND week.weekly_end
+		AND p.user_id = #{post.user.userId:VARCHAR}
+						  <if test="challCategory == 3 ">
+								<!-- 진학상담 -->
+								<if test="detailCategory == 201 ">
+								 	AND	p.gather_category_no = '201'
+								</if>
+								<!-- 사랑과 이별 -->
+								<if test="detailCategory == 202 ">
+								 	AND p.gather_category_no = '202'
+								</if>
+								<!-- 데이트 -->
+								<if test="detailCategory == 205 ">
+								 	AND p.gather_category_no = '205'
+								</if>
+								<!-- 대나무숲 -->
+								<if test="detailCategory == 206 ">
+								 	AND p.gather_category_no = '206'
+								</if>
+						</if>  
+						) countTable
+	 </select>
+	 
+	 
+	 <!-- SQL : SELECT ROW Count -->	 <!-- 파라미터를 map으로 가져올것. -->
+	 <select  id="getChallCommentCompleteCount"  parameterType="challenge"	 resultType="int">
+	  	   	SELECT COUNT(*) 
+		FROM(SELECT  c.user_id,
+ 					c.post_no,
+					p.gather_category_no,
+					c.comment_date,
+					week.weekly_start,
+					week.weekly_end
+	FROM commentt c, post p, (SELECT the_latest.weekly_start,
+																	the_latest.weekly_end
+													FROM (SELECT weekly_start,
+																(weekly_start + 7) weekly_end
+																	FROM challenge 
+																	WHERE weekly_start IS NOT NULL 
+																	ORDER BY chall_no DESC) the_latest
+												WHERE ROWNUM = 1) week
+	WHERE  c.post_no = p.post_no AND c.comment_date  BETWEEN week.weekly_start  AND week.weekly_end
+	AND c.user_id = #{commentt.userId}) countTable
+	 </select>
+	 
+	 <!-- 이전글 이후글보기 추가 -->
+ 	<select id="getNextOrPrePost" parameterType="int" resultMap="challengSelectMap">
+	 	SELECT T.*
+		FROM (SELECT
+	    chall_no , chall_title 
+	    ,LAG(chall_no,1,0) OVER (ORDER BY chall_no) AS pre_chall_no
+	    ,LAG(chall_title,1,'(이전 글 없음)') OVER (ORDER BY chall_no) AS pre_chall_title
+	    ,LEAD(chall_no,1,0) OVER (ORDER BY chall_no) AS next_chall_no
+	    ,LEAD(chall_title,1,'(이후 글 없음)') OVER (ORDER BY chall_no) AS next_chall_title
+	    FROM challenge WHERE view_status = '1'
+	    ORDER BY chall_date DESC) T
+		WHERE chall_no = #{challNo}
+ 	</select>
+	 
+ 	
+</mapper>

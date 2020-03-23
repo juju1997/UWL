@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PurchaseMapper">
+ 	<resultMap id="purchaseSelectMap" type="purchase">
+ 		<result property="purchaseNo" column="purchase_no" jdbcType="NUMERIC"/>
+ 		<result property="userId" column="user_id" jdbcType="VARCHAR"/>
+ 		<result property="paymentOption" column="payment_option" jdbcType="VARCHAR"/>
+ 		<result property="itemCategory" column="item_category" jdbcType="VARCHAR"/>
+ 		<result property="importId" column="import_id" jdbcType="VARCHAR"/>
+ 		<result property="purchaseDate" column="purchase_date" jdbcType="DATE"/>
+ 		<result property="refundOption" column="refund_option" jdbcType="VARCHAR"/>
+ 		<result property="price" column="price" jdbcType="NUMERIC"/>
+ 		<result property="itemNo" column="item_no" jdbcType="NUMERIC"/>
+ 		<result property="item.itemNo" column="item_no" jdbcType="NUMERIC"/>
+ 		<result property="item.secondUserId" column="second_user_id" jdbcType="NUMERIC"/>
+ 	</resultMap>
+ 	
+ 	<insert id="addPurchase" parameterType="purchase">
+ 		INSERT INTO purchase
+		VALUES (SEQ_PURCHASE_PURCHASE_NO.NEXTVAL, #{userId}, #{paymentOption}, #{itemCategory}, #{importId:VARCHAR}, SYSDATE, '1', #{price}, SEQ_ITEM_ITEM_NO.CURRVAL )
+ 	</insert>
+ 	
+ 	<select id="getPurchase" parameterType="int" resultMap="purchaseSelectMap">
+ 		SELECT * FROM purchase
+		WHERE purchase_no = #{value}
+ 	</select>
+ 	
+ 	<select id="getPurchaseList" parameterType="map" resultMap="purchaseSelectMap">
+ 		SELECT * 
+		FROM ( SELECT inner_table.* , ROWNUM AS row_seq
+				FROM (	SELECT p.purchase_no, p.payment_option, p.user_id, p.item_category, p.import_id, p.purchase_date, p.refund_option, p.price, p.item_no, i.second_user_id
+						FROM purchase p, item i
+						WHERE user_id = #{userId}
+						AND p.item_no = i.item_no
+						ORDER BY p.purchase_no DESC
+				) inner_table 
+				WHERE ROWNUM &lt; = #{search.endRowNum} ) 
+		WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+ 	</select>
+ 	
+ 	<select id="getTotalCount" parameterType="map" resultType="int">
+ 		SELECT COUNT(*)
+		FROM (
+				SELECT * FROM purchase  
+				WHERE user_id = #{userId} 
+		) countTable
+ 	</select>
+ 	
+ 	<update id="updateRefundOptionByPurchaseNo" parameterType="int">
+ 		UPDATE purchase
+		SET refund_option = '2'
+		WHERE purchase_no = #{value}
+ 	</update>
+ 	
+ 	<delete id="deletePoint" parameterType="int">
+		DELETE reward
+		WHERE purchase_no = #{value}
+ 	</delete>
+ 	
+ 	<update id="deleteItem" parameterType="int">
+ 		UPDATE item
+ 		SET second_user_id = 'admin'
+ 		WHERE item_no = #{value}
+ 	</update>
+</mapper>

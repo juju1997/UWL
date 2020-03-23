@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PostMapper">
+ 	
+ 	<resultMap type="post" id="postSelectMap">
+ 		<result property="postNo" column="POST_NO" jdbcType="NUMERIC"/>
+ 		<result property="userId" column="USER_ID" jdbcType="VARCHAR"/>
+ 		<result property="user.userId" column="USER_ID" jdbcType="VARCHAR"/>
+ 		<result property="user.name" column="NAME" jdbcType="VARCHAR"/>
+ 		<result property="user.nickname" column="NICKNAME" jdbcType="VARCHAR"/>
+ 		<result property="user.profileName" column="PROFILE_NAME" jdbcType="VARCHAR"/>
+ 		<result property="postTitle" column="POST_TITLE" jdbcType="VARCHAR"/>
+ 		<result property="postContent" column="POST_CONTENT" jdbcType="VARCHAR"/>
+ 		<result property="postDate" column="POST_DATE" jdbcType="DATE"/>
+ 		<result property="uploadFileName" column="UPLOADFILE_NAME" jdbcType="VARCHAR"/>
+ 		<result property="hitCount" column="HIT_COUNT" jdbcType="NUMERIC"/>
+ 		<result property="likeCount" column="LIKE_COUNT" jdbcType="NUMERIC"/>
+ 		<result property="commentCount" column="COMMENT_COUNT" jdbcType="NUMERIC"/>
+ 		<result property="viewStatus" column="VIEW_STATUS" jdbcType="VARCHAR"/>
+ 		<result property="postCategoryNo" column="POST_CATEGORY_NO" jdbcType="VARCHAR"/>
+ 		<result property="gatherCategoryNo" column="GATHER_CATEGORY_NO" jdbcType="VARCHAR"/>
+ 		<result property="questionStatus" column="QUESTION_STATUS" jdbcType="VARCHAR"/>
+ 		<result property="place" column="PLACE" jdbcType="VARCHAR"/>
+ 		<result property="replyPostNo" column="REPLY_POST_NO" jdbcType="NUMERIC"/>
+ 		
+ 		<!--  이전글 다음글쉨 때매 추가함 -->
+ 		<result property="prePostNo" column="PRE_POST_NO" jdbcType="NUMERIC"/>
+ 		<result property="prePostTitle" column="PRE_POST_TITLE" jdbcType="VARCHAR"/>
+ 		<result property="nextPostNo" column="NEXT_POST_NO" jdbcType="NUMERIC"/>
+ 		<result property="nextPostTitle" column="NEXT_POST_TITLE" jdbcType="VARCHAR"/>
+ 	</resultMap>
+ 	
+ 	<select id="getBoard" parameterType="int" resultMap = "postSelectMap">
+ 		SELECT
+ 			post_no, u.user_id, post_title, post_content, post_date, hit_count, like_count, comment_count, view_status, post_category_no, gather_category_no, uploadfile_name, u.name, u.nickname, u.profile_name
+ 		FROM post p, users u
+ 		WHERE p.user_id = u.user_id 
+ 		AND post_no = #{value}
+ 	</select>
+ 	
+ 	<insert id="addBoard" parameterType="post">
+ 		INSERT
+ 		INTO post(post_no, user_id, post_title, post_content, post_date, hit_count, like_count, comment_count, view_status, post_category_no, gather_category_no, uploadfile_name)
+ 		VALUES(seq_post_post_no.NEXTVAL, #{userId}, #{postTitle}, #{postContent}, SYSDATE, 0, 0, 0, '1', '2', #{gatherCategoryNo}, #{uploadFileName})
+ 	</insert>
+ 	
+ 	<update id="updateBoard" parameterType="post">
+ 		UPDATE post
+ 		SET
+ 			gather_category_no = #{gatherCategoryNo},
+			post_title = #{postTitle},
+			post_content = #{postContent},
+			uploadfile_name = #{uploadFileName}
+		WHERE post_no = #{postNo} 		
+ 	</update>
+ 	
+ 	<update id="deleteBoard" parameterType="int">
+ 		UPDATE post
+ 		SET view_status = '3'
+ 		WHERE post_no = #{value}
+ 	</update>
+ 	
+ 	<select id="getBoardList" parameterType="map" resultMap="postSelectMap">
+ 		SELECT *
+ 		FROM ( SELECT inner_table.*, ROWNUM AS row_seq
+ 			FROM ( SELECT post_no, p.user_id, post_title, post_content, post_date, hit_count, like_count, comment_count, view_status, post_category_no, gather_category_no, uploadfile_name, u.name, u.nickname, u.profile_name
+ 						FROM post p, users u
+ 						WHERE post_category_no = '2'
+ 						AND view_status = '1'
+ 						<if test="gatherCategoryNo != '' ">
+	 						AND gather_category_no = #{gatherCategoryNo}
+		 						<if test="search.searchCondition != null">
+		 							<if test="search.searchCondition == 1 and search.searchKeyword != '' ">
+		 								AND post_title LIKE '%'|| #{search.searchKeyword}||'%'
+		 								OR post_content LIKE '%'|| #{search.searchKeyword}||'%'
+		 							</if>
+		 							<if test="search.searchCondition == 2 and search.searchKeyword != '' ">
+		 								AND post_title LIKE #{search.searchKeyword}
+		 								AND post_content LIKE #{search.searchKeyword}
+		 							</if>
+		 							<if test="search.searchCondition == 3 and search.searchKeyword != '' ">
+		 								<!--  AND 작성자-->
+		 							</if>
+		 						</if>
+ 						</if>
+ 						<if test="gatherCategoryNo == '' ">
+ 							AND gather_category_no != '204'
+ 							AND gather_category_no != '203'
+ 						</if>
+	 					AND p.user_id = u.user_id
+ 						ORDER BY post_date DESC) inner_table
+ 			WHERE ROWNUM &lt;= #{search.endRowNum} )
+ 		WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+ 	</select>
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	<select id="getNotice" parameterType="int" resultMap ="postSelectMap">
+ 		SELECT
+ 			post_no, user_id, post_title, post_content, post_date, hit_count, like_count, comment_count, view_status, post_category_no, gather_category_no
+ 		FROM post
+ 		WHERE post_no = #{value}
+ 	</select>
+ 	
+ 	<insert id="addNotice" parameterType="post">
+ 		INSERT
+ 		INTO post(post_no, user_id, post_title, post_content, post_date, hit_count, like_count, comment_count, view_status, post_category_no, gather_category_no)
+ 		VALUES(seq_post_post_no.NEXTVAL, #{userId}, #{postTitle}, #{postContent}, SYSDATE, 0, 0, 0, '1', '1', #{gatherCategoryNo})
+ 	</insert>
+ 	
+ 	<update id="updateNotice" parameterType="post">
+ 		UPDATE post
+ 		SET
+ 			gather_category_no = #{gatherCategoryNo},
+			post_title = #{postTitle},
+			post_content = #{postContent}
+		WHERE post_no = #{postNo} 		
+ 	</update>
+ 	
+ 	<update id="deleteNotice" parameterType="int">
+ 		UPDATE post
+ 		SET view_status = '3'
+ 		WHERE post_no = #{value}
+ 	</update>
+ 	
+ 	<select id="getNoticeList" parameterType="search" resultMap="postSelectMap">
+ 		SELECT 
+ 			post_no, user_id, post_title, post_content, post_date, hit_count, like_count, comment_count, view_status, post_category_no, gather_category_no
+ 		FROM ( SELECT inner_table.*, ROWNUM AS row_seq
+ 			FROM ( SELECT * FROM post
+ 						WHERE post_category_no = '1'
+ 						AND view_status = '1'
+	 						<if test="searchCondition != null">
+	 							<if test="searchCondition ==  '101' ">
+	 								AND gather_category_no = #{searchCondition} 
+	 							</if>
+	 							<if test="searchCondition ==  '102' ">
+	 								AND gather_category_no = #{searchCondition} 
+	 							</if>
+	 							<if test="searchCondition ==  '103' ">
+	 								AND gather_category_no = #{searchCondition} 
+	 							</if>
+	 							<if test="searchCondition ==  '104' ">
+	 								AND gather_category_no = #{searchCondition} 
+	 							</if>
+	 							<if test="searchCondition ==  '105' ">
+	 								AND gather_category_no = #{searchCondition} 
+	 							</if>
+	 							<if test="searchCondition ==  '106' ">
+	 								AND gather_category_no = #{searchCondition} 
+	 							</if>
+	 							<if test="searchCondition ==  '107' ">
+	 								AND gather_category_no = #{searchCondition} 
+	 							</if>
+	 							<if test="searchCondition ==  '108' ">
+	 								AND gather_category_no = #{searchCondition} 
+	 							</if>
+	 							<if test="searchCondition ==  '109' ">
+	 								AND gather_category_no = #{searchCondition} 
+	 							</if>
+	 							<if test="searchCondition ==  '110' ">
+	 								AND gather_category_no = #{searchCondition} 
+	 							</if>
+	 							<if test="searchCondition ==  '111' ">
+	 								AND gather_category_no = #{searchCondition} 
+	 							</if>
+	 						</if>
+ 						ORDER BY post_date DESC) inner_table
+ 			WHERE ROWNUM &lt;= #{endRowNum} )
+ 		WHERE row_seq BETWEEN #{startRowNum} AND #{endRowNum}
+ 	</select>
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	<!-- 공지사항  -->
+ 	<select  id="getTotalCount"  parameterType="search"	 resultType="int">
+	  	select count(*) from (SELECT * 
+        FROM (  SELECT inner_table.* , ROWNUM AS row_seq
+                  FROM ( SELECT post_no , post_title, post_content, post_date , QUESTION_STATUS, reply_post_no
+                            FROM post
+							WHERE post_category_no = '1'
+							ORDER BY post_date DESC) 
+				inner_table)
+		)
+	 </select>
+	 
+	 <!-- 각각 게시판  -->
+ 	<select  id="getTotalCount2"  parameterType="post" resultType="int">
+	  	
+SELECT count(*)
+ 		FROM ( SELECT inner_table.*
+ 			FROM ( SELECT post_no, p.user_id, post_title, post_content, post_date, hit_count, like_count, comment_count, view_status, post_category_no, gather_category_no, uploadfile_name, u.name, u.nickname, u.profile_name
+ 						FROM post p, users u
+ 						WHERE post_category_no = '2'
+ 						AND view_status = '1'
+ 						<if test="gatherCategoryNo != '' ">
+	 						AND gather_category_no = #{gatherCategoryNo}
+ 						</if>
+	 					AND p.user_id = u.user_id
+ 						ORDER BY post_date DESC) inner_table
+                        )
+	 </select>
+	 
+	 
+ 	
+ 	<!-- 조회수든 뭐든 ㅅㅂ ㅋㅋ -->
+ 	<insert id="updateHitStatus" parameterType="map">
+ 		UPDATE post
+ 		SET hit_count = hit_count + #{change}
+ 		WHERE post_no = #{postNo}
+ 	</insert>	
+ 	
+ 	
+ 	<!-- 이전글 이후글보기 추가 -->
+ 	<select id="getNextOrPrePost" parameterType="int" resultMap = "postSelectMap">
+ 	SELECT T.*
+	FROM (SELECT
+    POST_NO , POST_TITLE 
+    ,LAG(POST_NO,1,0) OVER (ORDER BY POST_NO) AS PRE_POST_NO
+    ,LAG(POST_TITLE,1,'(이전 글 없음)') OVER (ORDER BY POST_NO) AS PRE_POST_TITLE
+    ,LEAD(POST_NO,1,0) OVER (ORDER BY POST_NO) AS NEXT_POST_NO
+    ,LEAD(POST_TITLE,1,'(이후 글 없음)') OVER (ORDER BY POST_NO) AS NEXT_POST_TITLE
+    FROM POST
+    ORDER BY POST_NO) T
+	WHERE POST_NO = #{postNo}
+ 	</select>
+ 	
+ 	
+ 	
+</mapper>

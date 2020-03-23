@@ -1,0 +1,103 @@
+@charset "utf-8";
+
+div.search2 {
+
+    position: relative;
+    line-height: 55px;
+    height: 55px;
+}
+
+div.search2 input {
+    line-height: 40px;
+    width: calc(100% - 45px);
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 0;
+    background-color: rgb(230, 236, 240);
+    border: none;
+    border-radius: 0 15px 15px 0;
+}
+
+div.search2 i {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 45px;
+    text-align: center;
+    background-color: rgb(230, 236, 240);
+    height: 40px;
+    line-height: 40px;
+    border-radius: 15px 0 0 15px;
+    left: 0;
+}
+
+/*right에 친구 목록*/
+div.friendList {
+    background-color: rgb(245, 248, 250);
+    border-radius: 15px;
+    padding: 10px 0 5px;
+}
+
+div.friendList li:first-child {
+    line-height: 30px;
+    padding: 0 10px 5px;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+div.friendList li:first-child i {
+
+    position: absolute;
+    top: 40%;
+    transform: translateY(-56%);
+    right: 10px;
+}
+
+div.friendList li {
+    line-height: 50px;
+    border-bottom: 1px solid rgb(238, 238, 238);
+    position: relative;
+    font-weight: bold;
+}
+
+div.friendList li:last-child {
+    border: none;
+}
+
+div.friendList li span:nth-child(1) {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    vertical-align: middle;
+    background-color: lightgray;
+    border-radius: 50%;
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
+div.friendList li img {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    vertical-align: middle;
+    background-color: lightgray;
+    border-radius: 50%;
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
+
+div.friendList li span:nth-child(2) {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: lightgreen;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 15px;
+    border-radius: 50%;
+
+}

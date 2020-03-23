@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="SchoolRankMapper">
+
+	<resultMap id="schoolRankSelectMap" type="schoolRank">
+		
+		<!-- <result property="user.userId" 			column="user_id" 			jdbcType="VARCHAR"/> -->
+		<result property="userId" 			column="user_id" 			jdbcType="VARCHAR"/>
+		
+		<result property="schoolNo" 			column="school_no" 			jdbcType="NUMERIC"/>
+		<result property="schoolName" 			column="school_name" 			jdbcType="VARCHAR"/>
+		<result property="schoolAddress" 			column="school_address" 			jdbcType="NUMERIC"/>
+		<result property="ranking" 					column="ranking" 		jdbcType="NUMERIC" />
+		<result property="totalUser" 			column="total_user" 			jdbcType="NUMERIC"/>
+		<result property="totalActivityPoint" 	column="total_activity_point" 		jdbcType="NUMERIC" />
+		
+		<!-- 개인랭킹 가상컬럼과 바인딩 -->
+		<result property="recentlyTotalActivityPoint" 	column="recently_total_activity_point" 		jdbcType="NUMERIC" />
+	
+	</resultMap>
+	
+	<insert 	id="addSchoolRank"		parameterType="schoolRank" >
+		INSERT INTO school_rank(school_no, school_name, school_address) 
+						VALUES (#{schoolNo}, #{schoolName},#{schoolAddress})
+	 </insert>
+	 
+	 <!-- 회원가입 시 해당학교 가입자가 있다면 -->
+	 <update	id="updateSchoolTotalUser"	parameterType="schoolRank" >
+	  	 UPDATE school_rank 
+		<set>
+			total_user = total_user  + 1
+		</set>
+		WHERE school_no = #{schoolNo}
+	 </update>
+	 
+	 <!-- 도전과제를 적립하고나서 increse를 실행하고나서 그 정보를 긁어다가 ranking에 반영업데이트를 해야됨. 적용전 -->
+	 <update	id="updateSchoolRank"	parameterType="schoolRank" >
+	  	 UPDATE school_rank 
+		<set>
+			total_user = total_user  + 1,
+			total_activity_point = (SELECT sum(sum_table.variable_activity_point)  
+		FROM (SELECT  u.school_no, r.variable_activity_point FROM reward r, users u WHERE r.user_id = u.user_id AND u.school_no = #{schoolNo}) sum_table)
+		</set>
+		WHERE school_no = #{schoolNo}
+	 </update>
+	 
+	
+	<!-- SELECT LIST RANKING 조회 -->
+	<select  id="getSchoolRankingList"  parameterType="search"	resultMap="schoolRankSelectMap">
+	  	
+	  	  SELECT *
+	  	FROM (SELECT  ROWNUM AS row_seq,
+	  									inner_table.ranking ranking,
+	  									inner_table.school_no school_no,
+	  									inner_table.school_name school_name,
+	  									inner_table.school_address,
+	  									inner_table.total_user,
+	  									inner_table.total_activity_point
+ 					FROM ( 	SELECT RANK() OVER (ORDER BY total_activity_point DESC) ranking,
+								school_no,
+								school_name,
+								school_address,
+								total_user,
+								total_activity_point
+								FROM school_rank) inner_table
+				WHERE ROWNUM &lt;= #{endRowNum:INTEGER}) myschool
+				WHERE row_seq BETWEEN #{startRowNum:INTEGER} AND #{endRowNum:INTEGER}
+				
+	 </select>
+	 
+	<!-- SELECT LIST RANKING 조회 ===> 개인 -->
+	<select  id="getIndividualRankingList"  parameterType="search"	resultMap="schoolRankSelectMap">
+	  	 SELECT *
+	  	FROM (SELECT  ROWNUM AS row_seq,
+						inner_table.ranking,
+						inner_table.user_id,
+						inner_table.school_name,
+						inner_table.recently_total_activity_point
+ 					FROM ( SELECT RANK() OVER (ORDER BY individual.recently_total_activity_point DESC) ranking,
+												individual.user_id,
+												name.school_name,
+												name.school_no,
+												individual.recently_total_activity_point
+									FROM (SELECT user_id,
+													sum(variable_activity_point) recently_total_activity_point
+													FROM reward 
+													GROUP BY user_id 
+													ORDER BY recently_total_activity_point DESC) individual,
+													(SELECT sr.school_name school_name,
+																					u.user_id user_id,
+																					sr.school_no school_no
+														FROM users u, school_rank sr 
+														WHERE u.school_no = sr.school_no) name
+									WHERE individual.user_id = name.user_id) inner_table
+				WHERE ROWNUM &lt;= #{endRowNum:INTEGER} )
+				WHERE row_seq BETWEEN #{startRowNum:INTEGER} AND #{endRowNum:INTEGER} 
+	 </select>
+	 
+	 <!-- SQL : SELECT ONE  -->
+	 <select  id="getSearchRank"  parameterType="int"	resultMap="schoolRankSelectMap">
+	  	 SELECT school_no,
+				school_name,
+				school_address,
+				total_user,
+				total_activity_point
+		FROM school_rank
+		WHERE school_no = #{value}
+	 </select>
+	 
+	 <!-- SQL : SELECT ONE  -->
+	 <select  id="getMySchool"  parameterType="String"	resultMap="schoolRankSelectMap">
+	  	SELECT u.user_id,
+  				sr.school_no,
+				sr.school_name,
+				sr.total_activity_point,
+				total.recently_total_activity_point
+		FROM users u, school_rank sr,(SELECT sum(variable_point) recently_total_point, 
+																				sum(variable_activity_point) recently_total_activity_point 
+																FROM reward WHERE user_id=#{value}) total
+		WHERE u.school_no = sr.school_no AND u.user_id = #{value}
+	 </select>
+	 
+	 <!-- SQL : SELECT ROW Count -->	 
+	 <select  id="getTotalCount"  parameterType="search"	 resultType="int">
+	  	 SELECT COUNT(*)
+				FROM (SELECT *
+	  	FROM (SELECT  ROWNUM AS row_seq,
+	  									inner_table.ranking ranking,
+	  									inner_table.school_no school_no,
+	  									inner_table.school_name school_name,
+	  									inner_table.school_address,
+	  									inner_table.total_user,
+	  									inner_table.total_activity_point
+ 					FROM ( 	SELECT RANK() OVER (ORDER BY total_activity_point DESC) ranking,
+								school_no,
+								school_name,
+								school_address,
+								total_user,
+								total_activity_point
+								FROM school_rank) inner_table
+				WHERE ROWNUM &lt;= #{endRowNum:INTEGER}) myschool
+				WHERE row_seq BETWEEN #{startRowNum:INTEGER} AND #{endRowNum:INTEGER})
+		WHERE row_seq BETWEEN #{startRowNum:INTEGER} AND #{endRowNum:INTEGER} 
+	 
+	 </select>
+	 
+	 
+	 <!-- SQL : SELECT ROW Count 개인용-->	 
+	 <select  id="getTotalCountIndividual"  parameterType="search"	 resultType="int">
+	  	 SELECT COUNT(*)
+	  	FROM (	SELECT  ROWNUM AS row_seq,
+						inner_table.ranking,
+						inner_table.user_id,
+						inner_table.recently_total_activity_point
+ 					FROM ( 	SELECT RANK() OVER (ORDER BY individual.recently_total_activity_point DESC) ranking,
+									individual.user_id,	
+									individual.recently_total_activity_point
+							FROM (SELECT user_id,
+											sum(variable_activity_point) recently_total_activity_point
+							FROM reward 
+							GROUP BY user_id 
+							ORDER BY recently_total_activity_point DESC) individual) inner_table
+		WHERE ROWNUM &lt;= #{endRowNum:INTEGER} )
+		WHERE row_seq BETWEEN #{startRowNum:INTEGER} AND #{endRowNum:INTEGER} 
+	 </select>
+	 
+ 	
+</mapper>

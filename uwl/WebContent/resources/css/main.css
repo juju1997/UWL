@@ -1,0 +1,410 @@
+@charset "utf-8";
+@import url('https://fonts.googleapis.com/css?family=Nanum+Gothic|Roboto&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+li {
+    list-style: none;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+body {
+    color: #898989;
+    font-size: 16px;
+    font-family: 'Roboto', sans-serif;
+    font-family: 'Nanum Gothic', sans-serif;
+}
+
+img {
+    vertical-align: middle;
+}
+
+i {
+    vertical-align: middle;
+}
+
+input {
+    vertical-align: middle;
+}
+
+select {
+    vertical-align: middle;
+}
+
+a:hover,
+a:focus {
+    text-decoration: none;
+}
+
+div.wrap {
+
+    width: 1250px;
+    margin: 0 auto;
+}
+
+/*left*/
+div.left {
+
+    width: 270px;
+    float: left;
+    padding-right: 45px;
+
+}
+
+/*left에 로고*/
+div.leftHeader {
+
+    line-height: 55px;
+    padding-left: 20px
+}
+
+/*left에 카테고리*/
+div.left ul {
+
+    font-size: 20px;
+    font-weight: bold;
+    line-height: 50px;
+    padding-left: 15px;
+}
+
+/*left 카테고리에 아이콘*/
+div.left ul li a i {
+    width: 40px;
+    text-align: center;
+
+    display: inline-block;
+}
+
+/*프로필 사진*/
+div.left ul li a i img {
+    border-radius: 50%;
+    width: 25px;
+}
+
+div.left > a {
+    background-color: #898989;
+    display: block;
+    line-height: 50px;
+    text-align: center;
+    font-weight: bold;
+    color: #fff;
+    border-radius: 30px;
+    margin-top: 10px;
+}
+
+/*main*/
+div.main {
+    border-right: 1px solid #ebebeb;
+    border-left: 1px solid #ebebeb;
+    float: left;
+    width: 710px;
+    background: rgb(230, 236, 240);
+}
+
+/*right*/
+div.right {
+    float: left;
+    width: 270px;
+}
+
+/*main에 홈*/
+div.mainHeader {
+
+    line-height: 55px;
+    font-weight: bold;
+    padding-left: 15px;
+    padding-right: 15px;
+    font-size: 20px;
+    width: 100%;
+    overflow: hidden;
+    border-bottom: 1px solid #ebebeb;
+    background-color: #fff;
+}
+
+div.mainHeader div.left2 {
+    width: 50%;
+    float: left;
+}
+
+div.mainHeader div.right2 {
+    text-align: right;
+    width: 50%;
+    float: right;
+}
+
+div.mainHeader div.right2 i {
+    vertical-align: baseline;
+}
+
+/*정렬, 검색*/
+div.mainTop {
+
+    overflow: hidden;
+    padding: 5px 10px 5px;
+
+    background-color: #fff;
+    margin-bottom: 10px;
+}
+
+div.mainTop ul {
+
+    width: 50%;
+    float: left;
+}
+
+div.mainTop ul li {
+    float: left;
+    margin-right: 15px;
+    line-height: 30px;
+}
+
+div.search {
+    width: 50%;
+    float: right;
+
+    text-align: right;
+}
+
+div.search select {
+
+    line-height: 30px;
+    height: 30px;
+}
+
+div.search input {
+
+    border: none;
+    border: 1px solid #898989;
+    line-height: 30px;
+    height: 30px;
+    text-indent: 5px;
+}
+
+div.search a {
+
+    display: inline-block;
+    height: 30px;
+    line-height: 30px;
+    padding: 0 10px;
+    border: 1px solid;
+    vertical-align: middle;
+}
+
+
+
+div.right {
+
+    padding-left: 20px;
+}
+
+/*right에 검색*/
+div.search2 {
+
+    position: relative;
+    line-height: 55px;
+    height: 55px;
+}
+
+div.search2 input {
+    line-height: 40px;
+    width: calc(100% - 45px);
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 0;
+    background-color: rgb(230, 236, 240);
+    border: none;
+    border-radius: 0 15px 15px 0;
+}
+
+div.search2 i {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 45px;
+    text-align: center;
+    background-color: rgb(230, 236, 240);
+    height: 40px;
+    line-height: 40px;
+    border-radius: 15px 0 0 15px;
+    left: 0;
+}
+
+/*right에 친구 목록*/
+div.friendList {
+    background-color: rgb(245, 248, 250);
+    border-radius: 15px;
+    padding: 10px 0 5px;
+}
+
+div.friendList li:first-child {
+    line-height: 30px;
+    padding: 0 10px 5px;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+div.friendList li:first-child i {
+
+    position: absolute;
+    top: 40%;
+    transform: translateY(-56%);
+    right: 10px;
+}
+
+div.friendList li {
+    line-height: 50px;
+    border-bottom: 1px solid rgb(238, 238, 238);
+    position: relative;
+    font-weight: bold;
+}
+
+div.friendList li:last-child {
+    border: none;
+}
+
+div.friendList li span:nth-child(1) {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    vertical-align: middle;
+    background-color: lightgray;
+    border-radius: 50%;
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
+div.friendList li img {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    vertical-align: middle;
+    background-color: lightgray;
+    border-radius: 50%;
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
+
+div.friendList li span:nth-child(2) {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: lightgreen;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 15px;
+    border-radius: 50%;
+
+}
+
+div.postList {
+    padding: 5px;
+}
+
+div.postList div.post {
+    background-color: #fff;
+    overflow: hidden;
+
+    padding: 10px;
+    margin-bottom: 10px;
+    box-shadow: 3px 3px 3px #b1b1b1;
+    border-radius: 15px;
+}
+
+div.uploadFile {
+
+    width: 30%;
+    float: left;
+    padding-right: 10px;
+    height: 190px;
+    overflow: hidden;
+}
+
+div.uploadFile img {
+    width: 100%;
+
+}
+
+div.post > a > div:nth-child(2) {
+
+    width: 70%;
+    float: right;
+}
+
+div.postTop {
+
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+div.postTop div.postTitle {
+
+    width: 80%;
+    float: left;
+}
+
+div.postTitle p {
+    display: inline-block;
+}
+
+div.postTitle p:nth-child(1) {
+    font-size: 20px;
+    font-weight: bold;
+    margin-right: 10px;
+    width: 80%;
+}
+
+div.postTitle p:nth-child(2) {
+    vertical-align: top;
+}
+
+div.postCategory {
+
+    display: inline-block;
+    float: right;
+    width: 20%;
+    text-align: right;
+}
+
+div.postContent {
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    /* 라인수 */
+    -webkit-box-orient: vertical;
+    word-wrap: break-word;
+    line-height: 1.2em;
+    height: 3.6em;
+    /* line-height 가 1.2em 이고 3라인을 자르기 때문에 height는 1.2em * 3 = 3.6em */
+    margin-bottom: 10px;
+}
+
+div.post > a > div:nth-child(2) > div:nth-child(3) p {
+    margin-right: 40px;
+    display: inline-block;
+}
+
+div.post > a > div:nth-child(2) {
+
+    height: 190px;
+    position: relative;
+}
+
+div.post > a > div:nth-child(2) > div:nth-child(3) {
+
+    position: absolute;
+    bottom: 0;
+}

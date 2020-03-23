@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+		
+		
+<mapper namespace="CommunityMapper">
+	<resultMap type="commentt" id="commentSelectMap">
+		<result property="commentNo" column="COMMENT_NO" jdbcType="NUMERIC"/>
+		<result property="userId" column="USER_ID" jdbcType="VARCHAR"/>
+		
+ 		<result property="user.userId" column="USER_ID" jdbcType="VARCHAR"/>
+ 		<result property="user.name" column="NAME" jdbcType="VARCHAR"/>
+ 		<result property="user.nickname" column="NICKNAME" jdbcType="VARCHAR"/>
+ 		<result property="user.profileName" column="PROFILE_NAME" jdbcType="VARCHAR"/>
+		
+		<result property="postNo" column="POST_NO" jdbcType="NUMERIC"/>
+		<result property="commentContent" column="COMMENT_CONTENT" jdbcType="VARCHAR"/>
+		<result property="commentDate" column="COMMENT_DATE" jdbcType="DATE"/>
+		<result property="commentStatus" column="COMMENT_STATUS" jdbcType="VARCHAR"/>
+		<result property="likeCount" column="LIKE_COUNT" jdbcType="NUMERIC"/>
+		
+		<result property="likeStatus" column="LIKE_STATUS" jdbcType="NUMERIC"/> 
+		
+	</resultMap>
+	
+	<resultMap type="likey" id="likeSelectMap">
+		<result property="likeNo" column="LIKE_NO" jdbcType="NUMERIC"/>
+		<result property="refCommentNo" column="REF_COMMENT_NO" jdbcType="NUMERIC"/>
+		<result property="refPostNo" column="REF_POST_NO" jdbcType="NUMERIC"/>
+		<result property="userId" column="USER_ID" jdbcType="VARCHAR"/>
+		<result property="likeWhat" column="LIKE_WHAT" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<resultMap type="chatting" id="chattingSelectMap">
+		<result property="master" column="MASTER" jdbcType="VARCHAR"/>
+		<result property="masterName" column="MASTER_NAME" jdbcType="VARCHAR"/>
+		<result property="enterUser" column="TARGET" jdbcType="VARCHAR"/>
+		<result property="enterUserName" column="TARGET_NAME" jdbcType="VARCHAR"/>
+		<result property="roomNo" column="ROOM_NO" jdbcType="NUMERIC"/>
+		<result property="lastDate" column="LAST_Date" jdbcType="DATE"/>
+		<result property="lastChat" column="LAST_CHAT" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	
+	<!-- 댓글 -->
+	<insert id="addComment" parameterType="commentt">
+		INSERT
+		INTO commentt(
+				comment_no, user_id, post_no, comment_content, comment_date, comment_status, like_count)
+		VALUES(seq_commentt_comment_no.NEXTVAL, #{userId}, #{postNo}, #{commentContent}, SYSDATE, '1', 0)
+	</insert>
+	
+	<select id="getComment" parameterType="map" resultMap="commentSelectMap">
+	SELECT
+		*
+	FROM (SELECT c.comment_no, c.user_id, c.post_no, c.comment_content, c.comment_date, c.comment_status, u.name, u.nickname, u.profile_name 
+	FROM commentt c, users u
+	WHERE c.user_id = u.user_id
+	 ORDER BY c.comment_no DESC)
+	WHERE 
+		user_id = #{userId}
+		AND post_no = #{postNo}
+		AND comment_status = '1'
+		AND ROWNUM = 1
+	</select>
+	
+	<select id="getCommentByCommentNo" parameterType="int" resultMap="commentSelectMap">
+		SELECT
+			c.comment_no, c.user_id, c.post_no, c.comment_content, c.comment_date, c.comment_status, u.name, u.nickname, u.profile_name
+		FROM commentt c, users u
+		WHERE comment_no = #{value}
+			AND u.user_id = c.user_id
+	</select>
+	
+	<update id="updateComment" parameterType="commentt">
+		UPDATE commentt
+		SET
+			comment_content = #{commentContent}
+		WHERE comment_no = #{commentNo}
+	</update>
+	
+	<update id="deleteComment" parameterType="int">
+		UPDATE commentt
+		SET
+			comment_status = '2'
+		WHERE comment_no = #{commentNo}
+	</update>
+	
+	<!-- 게시물의 댓글(1), 본인의 댓글(2) -->
+	<select id="getCommentList" parameterType="map" resultMap="commentSelectMap">
+ 		SELECT *
+ 		FROM ( SELECT inner_table.*, ROWNUM AS row_seq
+ 			FROM ( SELECT comment_no, c.user_id, post_no, comment_content, comment_date, comment_status, name, nickname, profile_name, (
+ 							SELECT like_no 
+ 							FROM likey
+ 							WHERE ref_comment_no = comment_no and user_id = #{userId} AND like_what = '2') AS like_status, like_count
+ 					FROM commentt c, users u
+ 						WHERE comment_status = '1'
+ 						<if test="search.searchCondition == 1"> 
+ 							AND post_no = #{postNo}
+ 						</if>
+ 						<if test="search.searchCondition == '2'">
+ 							AND user_id = #{userId}
+ 						</if>
+ 							AND c.user_id = u.user_id
+ 						ORDER BY comment_no) inner_table
+ 			WHERE ROWNUM &lt;= #{search.endRowNum} )
+ 		WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	</select>
+	
+	<!-- 코멘트 페이징용 -->
+	<select id="getCommentTotalCount" parameterType="search" resultType="int">
+		SELECT COUNT(*)
+	  	FROM(	SELECT *
+						FROM commentt
+						<if test="searchCondition != null">
+							<where>
+								<if test="searchCondition == 1 and searchKeyword !='' ">
+						 			and post_no = #{searchKeyword}
+						 			and comment_status = '1'
+								</if>
+								<if test="searchCondition == 2 and searchKeyword !='' ">
+						 			and user_id = #{searchKeyword}
+						 			and comment_status = '1'
+								</if>
+							</where>
+						</if>  ) countTable
+	</select>
+	
+	<!-- 좋아요 -->
+	<insert id="addPostLike" parameterType="likey">
+		INSERT
+		INTO likey(
+				like_no, ref_comment_no, ref_post_no, user_id, like_what)
+		VALUES(seq_likey_like_no.NEXTVAL, null, #{refPostNo}, #{userId}, '1')
+	</insert>
+	
+	<insert id="addCommentLike" parameterType="likey">
+		INSERT
+		INTO likey(
+				like_no, ref_post_no, ref_comment_no, user_id, like_what)
+		VALUES(seq_likey_like_no.NEXTVAL, #{refPostNo}, #{refCommentNo}, #{userId}, '2')
+	</insert>
+	
+	<delete id="deleteLike" parameterType="int">
+		DELETE 
+		FROM likey
+		WHERE like_no = #{likeNo}
+	</delete>
+	
+	<select id="getLike" parameterType="likey" resultMap="likeSelectMap">
+		SELECT
+			like_no, ref_comment_no, ref_post_no, user_id, like_what
+		FROM likey
+		WHERE 
+			user_id = #{userId}
+			<if test="likeWhat == 1">
+				AND like_what = '1'
+				AND ref_post_no = #{refPostNo}
+			</if>
+			<if test="likeWhat == 2">
+				AND like_what = '2'
+				AND ref_comment_no = #{refCommentNo}
+			</if>
+	</select>
+	
+	<!-- 게시글 좋아요(1), 댓글 좋아요(2) -->
+	<select id="getLikeList" parameterType="map" resultMap="likeSelectMap">
+		SELECT 
+ 			like_no, ref_comment_no, ref_post_no, user_id, like_what
+ 		FROM ( SELECT inner_table.*, ROWNUM AS row_seq
+ 			FROM ( SELECT * FROM likey 
+ 					WHERE 
+ 							user_id = #{userId}
+ 						<if test = "search.searchCondition == 1">
+ 							AND like_what = '1'
+ 						</if>
+ 						<if test = "search.searchCondition == 2">
+ 							AND like_what = '2'
+ 						</if>
+ 						ORDER BY like_no) inner_table
+ 			WHERE ROWNUM &lt;= #{search.endRowNum} )
+ 		WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	</select>
+	
+	<!-- 좋아요 페이징용 -->
+	<select id="getLikeTotalCount" parameterType="search" resultType="int">
+		SELECT COUNT(*)
+	  	FROM(	SELECT *
+						FROM likey
+						<!-- <if test="searchCondition != null">
+							<where>
+								<if test="searchCondition == 1 and searchKeyword !='' ">
+						 			and prod_no = #{searchKeyword}
+								</if>
+								<if test="searchCondition == 2 and searchKeyword !='' ">
+						 			and prod_name = #{searchKeyword}
+								</if>
+								<if test="searchCondition == 3 and searchKeyword !='' ">
+						 			and price = #{searchKeyword}
+								</if>
+							</where>
+						</if> --> ) countTable
+	</select>
+	
+	<!-- 채팅! -->
+	
+	<insert id="addChattingRoom" parameterType="chatting">	<!-- 채팅방 생성(1:1) -->
+		INSERT
+		INTO chatting_room(
+				room_no, master, target, last_date, last_chat)
+		VALUES(seq_chatting_room_room_no.NEXTVAL, #{master}, #{enterUser}, SYSDATE, '대화를 시작해보세요!')
+	</insert>
+	
+	<update id="enterChattingRoom" parameterType="chatting"> <!-- 채팅방 입장(1:1) -->
+		UPDATE chatting_room
+ 		SET target = #{chatting.enterUser}
+ 		WHERE room_no = #{roomNo}
+	</update>
+	
+	<delete id="outChattingRoom" parameterType="chatting">	<!-- 채팅방 폭파 -->
+		DELETE 
+		FROM chatting_room
+		WHERE room_no = #{roomNo}
+	</delete>
+	
+	<select id="getChattingRoomList" parameterType="chatting" resultMap="chattingSelectMap">
+		SELECT
+			room_no, master, target, last_date, last_chat,
+				(SELECT name FROM users WHERE master = user_id) master_name,
+				(SELECT name FROM users WHERE target = user_id) target_name
+		FROM chatting_room
+		WHERE 
+			master = #{master}
+			OR target = #{master}
+	</select>
+	
+	<!-- 채팅! -->
+	
+	
+	<update id="updateChatting" parameterType="map">
+		UPDATE chatting_room
+		SET last_chat = #{msg},
+			last_date = SYSDATE
+		WHERE room_no = #{roomNo}
+	</update>
+	
+	
+	
+	
+	<!-- 포스트의 댓글수 업데이트 -->
+	<update id="updateCommentStatus" parameterType="map">
+		UPDATE post
+ 		SET comment_count = comment_count + #{change}
+ 		WHERE post_no = #{postNo}
+	</update>
+	
+	<!-- 포스트의 좋아요 수 업데이트 -->
+	<update id="updatePostLikeStatus" parameterType="map">
+		UPDATE post
+ 		SET like_count = like_count + #{change}
+ 		WHERE post_no = #{postNo}
+	</update>
+	
+	<!-- 댓글의 좋아요 수 업데이트 -->
+	<update id="updateCommentLikeStatus" parameterType="map">
+		UPDATE commentt
+ 		SET like_count = like_count + #{change}
+ 		WHERE comment_no = #{commentNo}
+	</update>
+	
+</mapper>
+

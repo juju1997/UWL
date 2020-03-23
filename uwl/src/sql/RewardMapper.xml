@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="RewardMapper">
+
+	<!-- Reward(보상) table  assosiation 필요하면 추가할 것.-->
+	<resultMap id="rewardSelectMap" type="reward">
+		<result property="rewardNo" 			column="reward_no" 			jdbcType="NUMERIC"/>
+		<result property="userId" 			column="user_id" 			jdbcType="VARCHAR"/>
+		<result property="rowSeq" 			column="row_seq" 			jdbcType="VARCHAR"/>
+		
+		<result property="purchaseItem.purchaseNo" 			column="purchase_no" 			jdbcType="NUMERIC"/>
+		<result property="purchaseItem.itemCategory" 			column="item_category" 			jdbcType="VARCHAR"/>
+		<result property="challenge.challTitle" 			column="chall_title" 			jdbcType="VARCHAR"/>
+		<result property="challenge.challCategory" 			column="chall_category" 			jdbcType="VARCHAR"/>
+		
+		<result property="challenge.challNo" 			column="chall_no" 			jdbcType="NUMERIC"/>
+		<result property="challenge.challReward" 			column="chall_reward" 			jdbcType="NUMERIC"/>
+		
+		<result property="variablePoint" 			column="variable_point" 			jdbcType="NUMERIC"/>
+		<result property="variableActivityPoint" 	column="variable_activity_point" 		jdbcType="NUMERIC" />
+		<result property="variableDate" 	column="variable_date" 		jdbcType="DATE" />
+		<result property="totalPoint" 	column="total_point" 		jdbcType="NUMERIC" />
+		<result property="totalActivityPoint" 	column="total_activity_point" 		jdbcType="NUMERIC" />
+		
+		<!-- 가상컬럼 -->
+		<result property="recentlyTotalPoint" 	column="recently_total_point" 		jdbcType="NUMERIC" />
+		<result property="recentlyTotalActivityPoint" 	column="recently_total_activity_point" 		jdbcType="NUMERIC" />
+	
+		
+	</resultMap>
+	
+	
+	<!-- SQL : SELECT LIST 얘도 Search 추가할 것.-->
+	 <select  id="getUserBothPointList"  parameterType="map"	resultMap="rewardSelectMap">
+	  	SELECT *
+	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
+	  					FROM		( SELECT c.chall_no,
+						c.chall_title,
+						r.reward_no,
+						r.purchase_no,
+						r.user_id,
+						r.variable_date,
+						r.variable_activity_point,
+						r.total_activity_point,
+						r.total_point
+			FROM challenge c, reward r 
+			WHERE r.chall_no = c.chall_no 
+			AND r.user_id = #{reward.userId} AND r.purchase_no IS NULL ORDER BY r.variable_date DESC) inner_table
+						WHERE ROWNUM &lt;= #{search.endRowNum:INTEGER} )
+		WHERE row_seq BETWEEN #{search.startRowNum:INTEGER} AND #{search.endRowNum:INTEGER} 	
+	 </select>
+	 
+	 <select  id="getUserPurchaseList"  parameterType="map"	resultMap="rewardSelectMap">
+	  	SELECT *
+	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
+	  					FROM		(	SELECT r.reward_no,
+												r.user_id,
+												r.purchase_no ,
+												p.item_category,
+												r.variable_point,
+												r.variable_activity_point,
+												r.total_point,
+												r.total_activity_point,
+												r.variable_date,
+												ranking.ranking_point
+											   FROM purchase p, reward r, (SELECT sum(variable_point) ranking_point
+																			FROM reward WHERE user_id= #{reward.userId}) ranking
+				WHERE p.purchase_no = r.purchase_no AND r.purchase_no IS NOT NULL AND r.user_id = #{reward.userId} ORDER BY variable_date DESC) inner_table
+						WHERE ROWNUM &lt;= #{search.endRowNum:INTEGER} )
+		WHERE row_seq BETWEEN #{search.startRowNum:INTEGER} AND #{search.endRowNum:INTEGER} 	
+	 </select>
+	 
+	 
+	 <!-- 프로필에 쓸 토탈포인트 조회 -->
+	 <select  id="getTotalPoint"  parameterType="String"	resultMap="rewardSelectMap">
+	  	SELECT 
+	  			user_id,
+	  			sum(variable_point) recently_total_point, 
+				sum(variable_activity_point) recently_total_activity_point 
+		FROM reward WHERE user_id= #{value}
+		GROUP BY user_id
+	 </select>
+	 
+	 <!-- 프로필에 쓸 토탈포인트 조회 -->
+	 <select  id="getTheLatestTotalPoint"  parameterType="String"	resultMap="rewardSelectMap">
+	  	SELECT the_latest.total_point,
+				the_latest.total_activity_point
+		FROM (SELECT total_point,
+					total_activity_point 
+			FROM reward WHERE user_id = #{userId} ORDER BY reward_no DESC) the_latest
+		WHERE ROWNUM = 1
+	 </select>
+	 
+	 <!-- Reward -->
+	<!-- SQL : INSERT -->
+	<insert 	id="increasePoint"		parameterType="reward" >
+	 
+	  INSERT INTO reward(reward_no, 
+							user_id, 
+							chall_no,
+							variable_point, 
+							variable_activity_point, 
+							total_point,
+							total_activity_point,
+							variable_date)
+					VALUES (seq_reward_reward_no.NEXTVAL,
+							#{userId},
+							(SELECT  chall_no FROM challenge WHERE chall_no = #{challenge.challNo:NUMERIC}),
+							(SELECT chall_reward FROM challenge WHERE chall_no = #{challenge.challNo:NUMERIC}),
+							(SELECT chall_reward FROM challenge WHERE chall_no = #{challenge.challNo:NUMERIC}),
+							<if test="totalActivityPoint == 0">
+								#{challenge.challReward},
+								#{challenge.challReward},
+							</if>
+							<if test="totalActivityPoint != 0">
+								(SELECT the_latest.total_point  FROM (SELECT total_point  FROM reward WHERE user_id = #{userId} ORDER BY reward_no DESC) the_latest
+								WHERE ROWNUM = 1) + #{challenge.challReward},
+								(SELECT the_latest.total_activity_point  FROM (SELECT total_activity_point  FROM reward WHERE user_id = #{userId} ORDER BY reward_no DESC) the_latest
+								WHERE ROWNUM = 1) + #{challenge.challReward},
+							</if>
+							SYSDATE)
+	
+	 </insert>
+	 
+	 <!-- SQL : INSERT -->
+	<insert 	id="decreasePoint"		parameterType="purchase" >
+		INSERT INTO reward(reward_no, 
+							user_id, 
+							purchase_no,
+							variable_point, 
+							variable_activity_point, 
+							total_point,
+							total_activity_point,
+							variable_date)
+							VALUES (seq_reward_reward_no.NEXTVAL,
+											#{userId},
+											<!-- #{purchaseNo}, -->
+											seq_purchase_purchase_no.CURRVAL,
+											-#{price},
+											0,
+											(SELECT the_latest.total_point  
+												FROM (SELECT total_point  
+																FROM reward WHERE user_id =#{userId} 
+																ORDER BY reward_no DESC) the_latest
+												WHERE ROWNUM = 1) -#{price}, 
+												(SELECT the_latest.total_activity_point  
+												FROM (SELECT total_activity_point  
+																FROM reward WHERE user_id = #{userId} 
+																ORDER BY reward_no DESC) the_latest
+												WHERE ROWNUM = 1), SYSDATE)
+	 	
+ 	</insert>
+	 
+	 
+	 
+	 <!-- SQL : SELECT ROW Count -->
+	 <!-- 이거 어디에 쓰는지 알아볼것 -->	 
+	<!--  <select  id="getTotalCountOne"  parameterType="String"	 resultType="int"> -->
+	 <select  id="getTotalCountOne"  parameterType="reward"	 resultType="int">
+	  	SELECT COUNT(*)
+				  	FROM(	 SELECT  reward_no,
+									user_id,
+									purchase_no,
+									chall_no,
+									variable_point,
+									variable_activity_point,
+									total_point,
+									total_activity_point,
+									variable_date
+							FROM reward  
+							WHERE user_id = #{userId:VARCHAR} 
+								<!-- 포인트사용한 내역을 조회할 때 사용 -->
+								<if test="purchaseItem.purchaseNo != 0">
+									AND purchase_no IS NOT NULL
+								</if>
+					ORDER BY variable_date DESC)countTable
+	 </select>
+	 
+	 
+ 	
+ 	
+</mapper>

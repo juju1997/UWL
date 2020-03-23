@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE configuration
+ 		 PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+ 		"http://mybatis.org/dtd/mybatis-3-config.dtd">
+  						
+<!--	mybatis-config.xml :: MyBatis Framework  MetaData -->
+<configuration>
+
+	<!-- 기타 설정정보 :: [MyBatis_Home]/mybatis-3.2.1.pdf 참조 -->
+	<settings>
+		<setting name="callSettersOnNulls" value="false"/>
+	</settings>	
+	
+	<!-- FQCN(Full Qualified Class Name) Alias(별칭관리) -->
+	<typeAliases>
+		<typeAlias alias="user" type="com.uwl.service.domain.User" />
+		<typeAlias alias="challenge" type="com.uwl.service.domain.Challenge" />
+		<typeAlias alias="commentt" type="com.uwl.service.domain.Commentt" />
+		<typeAlias alias="couple" type="com.uwl.service.domain.Couple" />
+		<typeAlias alias="friend" type="com.uwl.service.domain.Friend" />
+		<typeAlias alias="item" type="com.uwl.service.domain.Item" />
+		<typeAlias alias="likey" type="com.uwl.service.domain.Likey" />
+		<typeAlias alias="matching" type="com.uwl.service.domain.Matching" />
+		<typeAlias alias="notification" type="com.uwl.service.domain.Notification" />
+		<typeAlias alias="post" type="com.uwl.service.domain.Post" />
+		<typeAlias alias="ask" type="com.uwl.service.domain.Ask" />
+		<typeAlias alias="purchase" type="com.uwl.service.domain.Purchase" />
+		<typeAlias alias="reward" type="com.uwl.service.domain.Reward" />
+		<typeAlias alias="schoolRank" type="com.uwl.service.domain.SchoolRank" />
+		<typeAlias alias="report" type="com.uwl.service.domain.Report" />
+		<typeAlias alias="page" type="com.uwl.common.Page" />
+		<typeAlias alias="search" type="com.uwl.common.Search" />
+		<typeAlias alias="chatting" type="com.uwl.service.domain.Chatting"/>
+	</typeAliases>
+	
+	 <!-- SQL Definition :: file include -->
+	<mappers>
+		<mapper resource="sql/CommunityMapper.xml"/>
+		<mapper resource="sql/UserMapper.xml"/>
+		<mapper resource="sql/ChallengeMapper.xml"/>
+		<mapper resource="sql/CoupleMapper.xml"/>
+		<mapper resource="sql/FriendMapper.xml"/>
+		<mapper resource="sql/ItemMapper.xml"/>
+		<mapper resource="sql/MatchingMapper.xml"/>
+		<mapper resource="sql/PostMapper.xml"/>
+		<mapper resource="sql/PurchaseMapper.xml"/>
+		<mapper resource="sql/RewardMapper.xml"/>
+		<mapper resource="sql/SchoolRankMapper.xml"/>
+		<mapper resource="sql/ReportMapper.xml"/>
+		<mapper resource="sql/SocialMapper.xml"/>
+	</mappers>
+
+</configuration>

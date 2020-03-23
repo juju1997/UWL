@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="FriendMapper">
+ 	
+ 	<resultMap id="friendSelectMap" type="friend">
+ 		<result property="friendNo" column="friend_no" jdbcType="NUMERIC"/>
+ 		<result property="firstUserId" column="first_user_id" jdbcType="VARCHAR"/>
+ 		<result property="secondUserId" column="second_user_id" jdbcType="VARCHAR"/>
+ 		<result property="friendStatus" column="friend_status" jdbcType="VARCHAR"/>
+ 	</resultMap>
+ 	
+ 	<resultMap id="userSelectMap" type="user">
+ 		<result property="userId" column="user_id" jdbcType="VARCHAR"/>
+ 		<result property="name" column="name" jdbcType="VARCHAR"/>
+ 		<result property="profileName" column="profile_name" jdbcType="VARCHAR"/>
+ 		<result property="gender" column="gender" jdbcType="VARCHAR"/>
+ 		<result property="schoolNo" column="school_no" jdbcType="NUMERIC"/>
+ 		<result property="birth" column="birth" jdbcType="DATE"/>
+ 		<result property="schoolName" column="school_name" jdbcType="VARCHAR"/>
+ 	</resultMap>
+ 	
+ 	
+ 	
+ 	<insert id="requestFriend" parameterType="friend">
+ 		INSERT INTO friend
+		VALUES (SEQ_FRIEND_FRIEND_NO.NEXTVAL, #{firstUserId}, #{secondUserId}, '1')
+ 	</insert>
+ 	
+ 	<insert id="acceptFriend" parameterType="friend">
+		INSERT INTO friend
+		VALUES (SEQ_FRIEND_FRIEND_NO.NEXTVAL, #{firstUserId}, #{secondUserId}, '2')
+ 	</insert>
+ 	
+ 	<update id="updateFriendStatus" parameterType="friend">
+ 		UPDATE friend
+		SET friend_status = '2'
+		WHERE first_user_id = #{secondUserId}
+		AND second_user_id = #{firstUserId}
+ 	</update>
+ 	
+ 	<update id="updateFriendStatusByNo" parameterType="int">
+ 		UPDATE friend
+		SET friend_status = '2'
+		WHERE friend_no = #{value}
+ 	</update>
+ 	
+ 	<delete id="rejectFriend" parameterType="friend">
+ 		DELETE FROM friend
+		WHERE first_user_id = #{secondUserId}
+		AND second_user_id = #{firstUserId}
+ 	</delete>
+ 	
+ 	<delete id="rejectFriendByNo" parameterType="int">
+ 		DELETE FROM friend
+		WHERE friend_no = #{value}
+ 	</delete>
+ 	
+ 	<delete id="deleteFriend" parameterType="friend">
+ 		DELETE FROM friend
+		WHERE (first_user_id = #{firstUserId} OR first_user_id = #{secondUserId})
+		AND (second_user_id = #{secondUserId} OR second_user_id = #{firstUserId})
+ 	</delete>
+ 	
+ 	<select id="getFriendList" parameterType="map" resultMap="userSelectMap">
+			SELECT * 
+			FROM ( SELECT inner_table.* , ROWNUM AS row_seq
+					FROM ( 
+							SELECT u1.user_id, u1.name, u1.gender, u1.school_no, u1.profile_name, s.school_name
+							FROM users u1, (SELECT second_user_id, friend_status
+							                FROM friend
+							                WHERE first_user_id = #{userId}
+							                AND friend_status = '2') u2,
+							                (SELECT school_no, school_name
+							                FROM school_rank) s
+							WHERE u1.user_id = u2.second_user_id
+							AND u1.school_no = s.school_no
+							ORDER BY u1.name
+					 ) inner_table 
+					WHERE ROWNUM &lt; = #{search.endRowNum} ) 
+			WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+ 	</select>
+ 	
+ 	<select id="getFriendTotalCount" parameterType="string" resultType="int">
+ 		SELECT COUNT(*)
+		FROM (
+				SELECT user_id, name, gender, school_no, profile_name, birth
+					FROM users, (SELECT second_user_id, friend_status
+					                FROM friend
+					                WHERE first_user_id = #{userId}
+					                AND friend_status = '2'
+					                )
+					WHERE user_id = second_user_id
+					ORDER BY name desc
+		) countTable
+ 	</select>
+ 	
+ 	<select id="getRequestList" parameterType="string" resultMap="userSelectMap">
+ 		SELECT u1.user_id, u1.name, u1.gender, u1.school_no, u1.profile_name, s.school_name
+		FROM users u1, (SELECT second_user_id, friend_status
+		                FROM friend
+		                WHERE first_user_id = #{value}
+		                AND friend_status = '1') u2,
+		                (SELECT school_no, school_name
+		                FROM school_rank) s
+		WHERE user_id = second_user_id
+		AND u1.school_no = s.school_no
+ 	</select>
+ 	
+ 	<select id="getAskedList" parameterType="string" resultMap="userSelectMap">
+		SELECT u1.user_id, u1.name, u1.gender, u1.school_no, u1.profile_name, u1.birth, s.school_name
+		FROM users u1, (SELECT first_user_id, friend_status
+		                FROM friend
+		                WHERE second_user_id = #{value}
+		                AND friend_status = '1') u2,
+		               (SELECT school_no, school_name
+		                FROM school_rank) s
+		WHERE u1.user_id = u2.first_user_id
+		AND u1.school_no = s.school_no
+ 	</select>
+ 	
+ 	<select id="getBirthFriendList" parameterType="string" resultMap="userSelectMap">
+ 		SELECT u1.user_id, u1.name, u1.gender , u1.school_no, u1.profile_name, u1.birth, s.school_name
+		FROM users u1, (SELECT second_user_id
+		                FROM friend
+		                WHERE first_user_id = #{value}
+		                AND friend_status = '2') u2,
+		             (SELECT school_no, school_name
+                                    FROM school_rank) s
+		WHERE u1.user_id = u2.second_user_id
+		AND u1.school_no = s.school_no
+		AND u1.birth = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+ 	</select>
+ 	
+ 	<select id="getSearchFriendList" parameterType="map" resultMap="userSelectMap">
+ 		SELECT * 
+		FROM ( SELECT inner_table.* , ROWNUM AS row_seq
+				FROM (  SELECT u.user_id, u.name, u.school_no, u.gender, u.birth, u.profile_name, s.school_name
+		                    FROM users u,(SELECT school_no, school_name
+                                    FROM school_rank) s
+                                    <where>
+		                    	<if test="search.searchCondition != null">
+									<if test="search.searchCondition == 0 and search.searchKeyword !='' ">
+										u.user_id LIKE '%'|| #{search.searchKeyword}||'%'
+									</if>
+									<if test="search.searchCondition == 1 and search.searchKeyword !='' ">
+										u.name LIKE '%'||#{search.searchKeyword}||'%'
+									</if>
+									<if test="search.searchCondition == 2 and search.searchKeyword !='' ">
+										s.school_name LIKE '%'||#{search.searchKeyword}||'%'
+									</if>
+								</if>
+									AND u.user_id != #{userId}
+									AND u.school_no = s.school_no
+									AND u.user_id NOT LIKE '%'||'admin'||'%'
+                                    </where>
+								) inner_table 
+				WHERE ROWNUM &lt; = #{search.endRowNum} ) 
+		WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+ 	</select>
+ 	
+ 	
+ 	<select id="getSearchTotalCount" parameterType="map" resultType="int">
+ 		SELECT COUNT(*)
+		FROM (
+				SELECT u.user_id, u.name, u.school_no, u.gender, u.birth, u.profile_name, s.school_name
+		                    FROM users u,(SELECT school_no, school_name
+                                    FROM school_rank) s
+                                    <where>
+		                    	<if test="search.searchCondition != null">
+									<if test="search.searchCondition == 0 and search.searchKeyword !='' ">
+										u.user_id LIKE '%'|| #{search.searchKeyword}||'%'
+									</if>
+									<if test="search.searchCondition == 1 and search.searchKeyword !='' ">
+										u.name LIKE '%'||#{search.searchKeyword}||'%'
+									</if>
+									<if test="search.searchCondition == 2 and search.searchKeyword !='' ">
+										s.school_name LIKE '%'||#{search.searchKeyword}||'%'
+									</if>
+								</if>
+									AND u.user_id != #{userId}
+                                    </where>
+								
+		) countTable
+ 	
+ 	</select>
+ 	
+ 	<select id="checkFriend" parameterType="friend" resultType="int">
+ 		select count(*)
+ 		from (
+ 			select *
+ 			from friend
+ 			where first_user_id = #{firstUserId}
+ 			and second_user_id = #{secondUserId}
+ 			and friend_status = '2'
+ 		)
+ 	</select>
+ 	
+ 	<select id="checkRequest" parameterType="friend" resultMap="friendSelectMap">
+ 		select *
+ 		from friend
+ 		where first_user_id = #{firstUserId}
+		and second_user_id = #{secondUserId}
+ 	</select>
+ 	
+</mapper>

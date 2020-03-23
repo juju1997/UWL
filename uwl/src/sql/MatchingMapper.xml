@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="MatchingMapper">
+ 	<resultMap type="matching" id="matchingSelectMap">
+ 		<result property="matchingNo" column="matching_no" jdbcType="NUMERIC"/>
+ 		<result property="firstUserId" column="first_user_id" jdbcType="VARCHAR"/>
+ 		<result property="secondUserId" column="second_user_id" jdbcType="VARCHAR"/>
+ 		<result property="sendDate" column="send_date" jdbcType="DATE"/>
+ 		<result property="matchingStatus" column="matching_status" jdbcType="VARCHAR"/>
+ 	</resultMap>
+ 	
+ 	<resultMap type="item" id="itemSelectMap">
+ 		<result property="itemNo" column="item_no" jdbcType="NUMERIC"/>
+ 		<result property="firstUserId" column="first_user_id" jdbcType="VARCHAR"/>
+ 		<result property="secondUserId" column="second_user_id" jdbcType="VARCHAR"/>
+ 		<result property="itemCategory" column="item_category" jdbcType="VARCHAR"/>
+ 		<result property="useResult" column="use_result" jdbcType="VARCHAR"/>
+ 		<result property="useDate" column="use_date" jdbcType="DATE"/>
+ 		<result property="itemDefault" column="item_default" jdbcType="VARCHAR"/>
+ 	</resultMap>
+ 	
+ 	<update id="updateCoupleRole" parameterType="string">
+ 		update
+ 		users
+ 		<set>
+ 			role = '3'
+ 		</set>
+ 		where user_id = #{value}
+ 	</update>
+ 	
+ 	<update id="updateCoupleRoleOther" parameterType="string">
+ 		update
+ 		users
+ 		<set>
+ 			role = '2'
+ 		</set>
+ 		where user_id = #{value}
+ 	</update>
+ 	
+ 	<update id="updateRoleFrom3To1" parameterType="string">
+ 		update
+ 		users
+ 		<set>
+ 			role = '1'
+ 		</set>
+ 		where user_id = #{value}
+ 	</update>
+ 	
+ 	<insert id="addMatching" parameterType="matching">
+ 		insert
+ 		into matching (matching_no, first_user_id, second_user_id, send_date, matching_status)
+ 		values(seq_matching_matching_no.nextval,
+ 		#{firstUserId:VARCHAR},
+ 		#{secondUserId:VARCHAR},
+ 		sysdate,
+ 		'1')
+ 	</insert>
+ 	
+ 	
+ 	
+ 	<update id="updateMatching" parameterType="matching">
+		update
+		matching
+		<set>
+			matching_status = #{matchingStatus}
+		</set>
+		where matching_no = #{matchingNo}
+ 	</update>
+ 	
+ 	
+ 	<select id="getMatching" parameterType="string" resultMap="matchingSelectMap">
+ 		select
+ 		matching_no, first_user_id, second_user_id, send_date, matching_status
+ 		from matching
+ 		where first_user_id = #{value}
+ 		and matching_status != '4'
+ 	</select>
+ 	
+ 	
+ 	
+ 	
+ 	<update id="deleteMatching" parameterType="matching">
+ 		update
+ 		matching
+ 		<set>
+ 			matching_status = '4'
+ 		</set>
+ 		where matching_no = #{matchingNo}
+ 	</update>
+ 	
+ 	<select id="getMatchingList" parameterType="map" resultMap="matchingSelectMap">
+ 		select
+ 		*
+ 		from matching
+ 		where matching_status != '4'
+ 		and second_user_id = #{userId}
+ 	</select>
+ 	
+ 	<select id="getAllMatchingList" parameterType="search" resultMap="matchingSelectMap">
+ 		select
+ 		*
+ 		from (
+ 			select
+ 			inner_table.*, rownum as row_seq
+ 			from (
+ 				select
+ 				*
+ 				from matching
+ 				where matchibg_status = '2'
+ 			) inner_table
+ 			where rownum &lt;= #{endRowNum}
+ 		) where row_seq between #{startRowNum} and #{endRowNum}
+ 	</select>
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	<select id="getTotalMatchingCount" parameterType="search" resultType="int">
+ 		select
+ 		count(*)
+ 		from (
+ 			select
+ 			*
+ 			from matching
+ 		)
+ 	</select>
+ 	
+ 	<sql id="matchingList">
+ 		select
+ 		*
+ 		from matching
+ 		where matching_status != '4'
+ 		and second_user_id = #{userId}
+ 	</sql>
+ 	
+ 	<select id="getTotalMatching" parameterType="map" resultType="int">
+ 		select
+ 		count(*)
+ 		from (
+ 			<include refid="matchingList"/>
+ 		)
+ 	</select>
+ 	
+ 	<insert id="addItem" parameterType="item">
+ 	
+ 		
+ 		insert
+ 		into item(item_no, first_user_id, item_category, item_default)
+ 		values(seq_item_item_no.nextval,
+ 		#{firstUserId:VARCHAR},
+ 		#{itemCategory:VARCHAR},
+ 		2)
+ 		
+ 	</insert>
+ 	
+ 	<select id="getItem" parameterType="map" resultMap="itemSelectMap">
+ 		select
+ 		rownum, item.*
+ 		from item
+ 		where item.first_user_id = #{userId}
+ 		and item.second_user_id is null
+ 		and item.item_category = #{itemCategory}
+ 		and rownum = 1
+ 		order by item_no
+ 	</select>
+ 	
+ 	<update id="updateItem" parameterType="item">
+ 		update
+ 		item
+ 		<set>
+	 		second_user_id = #{secondUserId:VARCHAR},
+	 		use_result = #{useResult:VARCHAR},
+	 		use_date = sysdate
+ 		</set>
+ 		where item_no = #{itemNo}
+ 	</update>
+ 	
+ 	<select id="getItemList" parameterType="map" resultMap="itemSelectMap">
+ 		select
+ 		*
+ 		from item
+ 		where first_user_id = #{userId}
+ 		and second_user_id is null
+ 		and item_category = #{itemCategory}
+ 		order by item_no
+ 	</select>
+ 	
+ 	<select id="getAllItemList" parameterType="search" resultMap="itemSelectMap">
+ 		select
+ 		*
+ 		from (
+ 			select
+ 			inner_table.*, rownum as row_seq
+ 			from (
+ 				select
+ 				*
+ 				from item
+ 			) inner_table
+ 			where rownum &lt;= #{endRowNum}
+ 		) where row_seq between #{startRowNum} and #{endRowNum}
+ 	</select>
+ 	
+ 	
+ 	
+ 	<select id="getTotalItemCount" parameterType="search" resultType="int">
+ 		select
+ 		count(*)
+ 		from (
+ 			select
+ 			*
+ 			from item
+ 		)
+ 	</select>
+ 	
+ 	<sql id="itemList">
+ 		select
+ 		*
+ 		from item
+ 		where first_user_id = #{userId}
+ 		and second_user_id is null
+ 		and item_category = #{itemCategory}
+ 	</sql>
+ 	
+ 	<select id="getTotalItem" parameterType="map" resultType="int">
+ 		select
+ 		count(*)
+ 		from (
+ 			<include refid="itemList"/>
+ 		)
+ 	</select>
+ 	
+ 	<select id="getMatchingByUserId" parameterType="String" resultMap="matchingSelectMap">
+ 		select
+ 		*
+ 		from matching
+ 		where matching_status = '2'
+ 		and first_user_id = #{value}
+ 	</select>
+</mapper>

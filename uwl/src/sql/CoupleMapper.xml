@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="CoupleMapper">
+ 	
+ 	<resultMap id="coupleSelectMap" type="couple">
+ 		<result property="coupleNo" column="couple_no" jdbcType="NUMERIC"/>
+ 		<result property="firstUserId" column="first_user_id" jdbcType="VARCHAR"/>
+ 		<result property="secondUserId" column="second_user_id" jdbcType="VARCHAR"/>
+ 		<result property="matchingDate" column="matching_date" jdbcType="DATE"/>
+ 		<result property="deleteStatus" column="delete_status" jdbcType="VARCHAR"/>
+ 	</resultMap>
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	<resultMap id="postSelectMap" type="post">
+ 		<result property="postNo" column="post_no" jdbcType="NUMERIC"/>
+ 		<result property="userId" column="user_id" jdbcType="VARCHAR"/>
+ 		<result property="postTitle" column="post_title" jdbcType="VARCHAR"/>
+ 		<result property="postContent" column="post_content" jdbcType="VARCHAR"/>
+ 		<result property="postDate" column="post_date" jdbcType="DATE"/>
+ 		<result property="uploadFileName" column="uploadfile_name" jdbcType="VARCHAR"/>
+ 		<result property="viewStatus" column="view_status" jdbcType="VARCHAR"/>
+ 		<result property="postCategoryNo" column="post_category_no" jdbcType="NUMERIC"/>
+ 		<result property="place" column="place" jdbcType="VARCHAR"/>
+ 	</resultMap>
+ 	
+ 	
+ 	
+ 	<resultMap id="commentSelectMap" type="commentt">
+ 		<result property="commentNo" column="comment_no" jdbcType="NUMERIC"/>
+ 		<result property="userId" column="user_id" jdbcType="VARCHAR"/>
+ 		<result property="postNo" column="post_no" jdbcType="NUMERIC"/>
+ 		<result property="commentContent" column="comment_content" jdbcType="VARCHAR"/>
+ 		<result property="commentDate" column="comment_date" jdbcType="DATE"/>
+ 		<result property="commentStatus" column="comment_status" jdbcType="VARCHAR"/>
+ 		
+ 	</resultMap>
+ 	
+ 	<insert id="addCouple" parameterType="couple">
+ 		insert
+ 		into couple(couple_no, first_user_id, second_user_id, matching_date, delete_status)
+ 		values(seq_couple_couple_no.nextval,
+ 		#{firstUserId:VARCHAR},
+ 		#{secondUserId:VARCHAR},
+ 		sysdate,
+ 		'1')
+ 	</insert>
+ 	
+ 	<select id="getCouple" parameterType="String" resultMap="coupleSelectMap">
+ 		select
+ 		couple_no, first_user_id, second_user_id, matching_date, delete_status
+ 		from couple
+ 		where (first_user_id = #{value}
+ 		or second_user_id = #{value})
+ 		and delete_status = '1'
+ 	</select>
+ 	
+ 	<update id="deleteCouple" parameterType="couple">
+ 		update
+ 		couple
+ 		<set>
+ 			delete_status = '2'
+ 		</set>
+ 		where couple_no = #{coupleNo}
+ 	</update>
+ 	
+ 	<insert id="addCoupleTimelinePost" parameterType="post">
+ 		insert
+ 		into post(post_no, user_id, post_title, post_content, post_date, uploadfile_name, view_status, post_category_no, place)
+ 		values(seq_post_post_no.nextval,
+ 		#{userId:VARCHAR},
+ 		#{postTitle:VARCHAR},
+ 		#{postContent:VARCHAR},
+ 		sysdate,
+ 		#{uploadFileName:VARCHAR},
+ 		'1',
+ 		'6',
+ 		#{place:VARCHAR})
+ 	</insert>
+ 	
+ 	<select id="getCoupleTimelinePost" parameterType="int" resultMap="postSelectMap">
+ 		select
+ 		post_no, user_id, post_title, post_content, post_date, uploadfile_name, view_status, post_category_no, place
+ 		from post
+ 		where post_no = #{value}
+ 	</select>
+ 	
+ 	<select id="getCoupleTimelinePostList" parameterType="map" resultMap="postSelectMap">
+ 		select
+ 		*
+ 		from (
+ 			select
+ 			inner_table.*, rownum as row_seq
+ 			from (
+ 				select
+ 				post.*, couple.first_user_id, couple.second_user_id
+ 				from (
+ 					select
+ 					*
+ 					from post
+ 					where view_status = '1'
+ 				) post, (
+ 					select
+ 					*
+ 					from couple
+ 					where delete_status = '1'
+ 				) couple
+ 				where (couple.first_user_id = #{userId}
+ 				OR couple.second_user_id = #{userId})
+ 				AND (post.user_id = couple.FIRST_USER_ID 
+ 				OR post.user_id = couple.SECOND_USER_ID )
+ 				and post.post_category_no = '6'
+ 				order by post_no desc
+ 			) inner_table
+ 			where rownum &lt;= #{search.endRowNum}
+ 		)
+ 		where row_seq between #{search.startRowNum} and #{search.endRowNum}
+ 	</select>
+ 	
+ 	<update id="updateCoupleTimelinePost" parameterType="post">
+ 		update
+ 		post
+ 		<set>
+ 			post_title = #{postTitle:VARCHAR},
+ 			post_content = #{postContent:VARCHAR},
+ 			uploadfile_name = #{uploadFileName:VARCHAR},
+ 			place = #{place:VARCHAR}
+ 		</set>
+ 		where post_no = #{postNo}
+ 	</update>
+ 	
+ 	<update id="deleteCoupleTimelinePost" parameterType="post">
+ 		update
+ 		post
+ 		<set>
+ 			view_status = '3'
+ 		</set>
+ 		where post_no = #{postNo}
+ 	</update>
+ 	
+ 	<sql id="coupleTimelinePostList">
+ 		select
+ 				post.*, couple.first_user_id, couple.second_user_id
+ 				from (
+ 					select
+ 					*
+ 					from post
+ 					where view_status = '1'
+ 				) post, (
+ 					select
+ 					*
+ 					from couple
+ 					where delete_status = '1'
+ 				) couple
+ 				where (couple.first_user_id = #{userId}
+ 				OR couple.second_user_id = #{userId})
+ 				AND (post.user_id = couple.FIRST_USER_ID 
+ 				OR post.user_id = couple.SECOND_USER_ID )
+ 				and post.post_category_no = '6'
+ 				order by post_no
+ 				
+ 		
+ 	</sql>
+ 	
+ 	<select id="getTotalCoupleTimelinePost" parameterType="map" resultType="int">
+ 		select
+ 		count(*)
+ 		from (
+ 			<include refid="coupleTimelinePostList"/>
+ 		)
+ 	</select>
+ 	
+ 	<insert id="addCoupleTimelineComment" parameterType="commentt">
+ 		insert
+ 		into commentt(comment_no, user_id, post_no, comment_content, comment_date, comment_status)
+ 		values(seq_commentt_comment_no.nextval,
+ 		#{userId:VARCHAR},
+ 		#{postNo:NUMERIC},
+ 		#{commentContent:VARCHAR},
+ 		sysdate,
+ 		'1')
+ 	</insert>
+ 	
+ 	<select id="getCoupleTimelineComment" parameterType="int" resultMap="commentSelectMap">
+ 		select
+ 		*
+ 		from commentt
+ 		where comment_no = #{value}
+ 	</select>
+ 	
+ 	<select id="getCoupleTimelineCommentList" parameterType="map" resultMap="commentSelectMap">
+ 		select
+ 		*
+ 		from (
+ 			select
+ 			inner_table.*, rownum as row_seq
+ 			from (
+ 				select
+ 				*
+ 				from commentt
+ 				where post_no = #{postNo}
+ 				and comment_status = '1'
+ 				order by comment_no desc
+ 			) inner_table
+ 			where rownum &lt;= #{search.endRowNum}
+ 		)
+ 		where row_seq between #{search.startRowNum} and #{search.endRowNum}
+ 	</select>
+ 	
+ 	<update id="deleteCoupleTimelineComment" parameterType="commentt">
+ 		update
+ 		commentt
+ 		<set>
+ 			comment_status = '2'
+ 		</set>
+ 		where comment_no = #{commentNo}
+ 	</update>
+ 	
+ 	<sql id="coupleTimelineCommentList">
+ 		select
+ 		*
+ 		from commentt
+ 		where post_no = #{postNo}
+ 		and comment_status = '1'
+ 		
+ 	</sql>
+ 	
+ 	<select id="getTotalCoupleTimelineComment" parameterType="map" resultType="int">
+ 		select
+ 		count(*)
+ 		from (
+ 			<include refid="coupleTimelineCommentList"/>
+ 		)
+ 	</select>
+ 	
+ 	<insert id="addSchedule" parameterType="post">
+ 		insert
+ 		into post(post_no, user_id, post_title, post_content, post_date, view_status, post_category_no, place)
+ 		values(seq_post_post_no.nextval,
+ 		#{userId:VARCHAR},
+ 		#{postTitle:VARCHAR},
+ 		#{postContent:VARCHAR},
+ 		#{postDate:DATE},
+ 		'1',
+ 		'7',
+ 		#{place:VARCHAR})
+ 	</insert>
+ 	
+ 	<select id="getSchedule" parameterType="int" resultMap="postSelectMap">
+ 		select
+ 		post_no, user_id, post_title, post_content, post_date, view_status, post_category_no, place
+ 		from post
+ 		where post_no = #{value}
+ 	</select>
+ 	
+ 	<select id="getScheduleList" parameterType="map" resultMap="postSelectMap">
+ 		select
+		*
+		from (
+			select
+			inner_table.*, rownum as row_seq
+			from (
+				select
+				post.*, couple.first_user_id, couple.second_user_id
+				from (
+					select
+					*
+					from post
+					where view_status = '1'
+					and post_date &gt;= TRUNC(TO_DATE(#{postDate}) , 'MM')
+					AND post_date &lt;= LAST_DAY(TO_DATE(#{postDate}))
+				) post, (
+					select
+					*
+					from couple
+					where delete_status = '1'
+				) couple
+				where (couple.first_user_id = #{userId}
+				OR couple.second_user_id = #{userId})
+				AND (post.user_id = couple.FIRST_USER_ID 
+				OR post.user_id = couple.SECOND_USER_ID )
+				and post.post_category_no = '7'
+				order by post_no desc
+			) inner_table
+			where rownum &lt;= #{search.endRowNum}
+		)
+		where row_seq between #{search.startRowNum} and #{search.endRowNum}
+ 	</select>
+ 	
+ 	<!-- <select id="getScheduleList2" parameterType="map" resultMap="postSelectMap">
+ 		select
+ 		*
+ 		from (
+ 			select
+ 			inner_table.*, rownum as row_seq
+ 			from (
+ 				select
+ 				post.*, couple.first_user_id, couple.second_user_id
+ 				from (
+ 					select
+ 					*
+ 					from post
+ 					where view_status = '1'
+ 				) post, (
+ 					select
+ 					*
+ 					from couple
+ 					where delete_status = '1'
+ 				) couple
+ 				where (post.user_id = couple.first_user_id
+ 				or post.user_id = couple.second_user_id)
+ 				and (couple.first_user_id = #{userId}
+ 				or couple.second_user_id = #{userId})
+ 				and post.post_category_no = '7'
+ 				order by post_no desc
+ 			) inner_table
+ 			where rownum &lt;= #{search.endRowNum}
+ 		)
+ 		where row_seq between #{search.startRowNum} and #{search.endRowNum}
+ 	</select> -->
+ 	
+ 	
+ 	
+ 	<update id="updateSchedule" parameterType="post">
+ 		update
+ 		post
+ 		<set>
+ 			post_title = #{postTitle:VARCHAR},
+ 			post_content = #{postContent:VARCHAR},
+ 			post_date = #{postDate:DATE},
+ 			place = #{place:VARCHAR}
+ 		</set>
+ 		where post_no = #{postNo}
+ 	</update>
+ 	
+ 	<update id="deleteSchedule" parameterType="post">
+ 		update
+ 		post
+ 		<set>
+ 			view_status = '3'
+ 		</set>
+ 		where post_no = #{postNo}
+ 	</update>
+ 	
+ 	<sql id="scheduleList">
+ 		select
+				post.*, couple.first_user_id, couple.second_user_id
+				from (
+					select
+					*
+					from post
+					where view_status = '1'
+					and post_date &gt;= TRUNC(TO_DATE(#{postDate}) , 'MM')
+					AND post_date &lt;= LAST_DAY(TO_DATE(#{postDate}))
+				) post, (
+					select
+					*
+					from couple
+					where delete_status = '1'
+				) couple
+				where (couple.first_user_id = #{userId}
+				OR couple.second_user_id = #{userId})
+				AND (post.user_id = couple.FIRST_USER_ID 
+				OR post.user_id = couple.SECOND_USER_ID )
+				and post.post_category_no = '7'
+				order by post_no desc
+ 				
+ 				
+ 	</sql>
+ 	
+ 	<!-- <sql id="scheduleList2">
+ 		select
+ 				post.*, couple.first_user_id, couple.second_user_id
+ 				from (
+ 					select
+ 					*
+ 					from post
+ 					where view_status = '1'
+ 				) post, (
+ 					select
+ 					*
+ 					from couple
+ 					where delete_status = '1'
+ 				) couple
+ 				where (post.user_id = couple.first_user_id
+ 				or post.user_id = couple.second_user_id)
+ 				and (couple.first_user_id = #{userId}
+ 				or couple.second_user_id = #{userId})
+ 				and post.post_category_no = '7'
+ 				
+ 				
+ 	</sql> -->
+ 	
+ 	<select id="getTotalSchedule" parameterType="map" resultType="int">
+ 		select
+ 		count(*)
+ 		from (
+ 			<include refid="scheduleList"/>
+ 		)
+ 	</select>
+ 	
+ 	<!-- <select id="getTotalSchedule2" parameterType="map" resultType="int">
+ 		select
+ 		count(*)
+ 		from (
+ 			<include refid="scheduleList2"/>
+ 		)
+ 	</select> -->
+ 	
+ 	<update id="deleteCoupleTimeline" parameterType="map">
+ 		
+ 		
+ 	
+ 		update
+ 		post
+ 		<set>
+ 			view_status = '3'
+ 		</set>
+ 		where (user_id = #{firstUserId}
+ 		or user_id = #{secondUserId})
+ 		and (post_category_no = '6'
+ 		or post_category_no = '7')
+ 	</update>
+ 	
+ 	
+</mapper>

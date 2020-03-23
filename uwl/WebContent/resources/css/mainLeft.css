@@ -1,0 +1,21 @@
+@charset "utf-8";
+
+div {
+    max-height: 0;
+    background-color: aliceblue;
+    transition: all 0.1s;
+    overflow: hidden;
+}
+
+div.on {
+    transition: all 1s;
+    max-height: 500px;
+}
+
+.img {
+    margin: -5px;
+}
+
+a:hover {
+    text-decoration: none;
+}

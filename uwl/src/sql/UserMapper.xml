@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="UserMapper">
+ 	 	
+	<resultMap type="user"	id="userSelectMap">
+		<result property="userId" 					column="user_id" 				jdbcType="VARCHAR"/>
+		<result property="password"					column="password" 				jdbcType="VARCHAR" />
+		<result property="name" 					column="name" 					jdbcType="VARCHAR" />
+		<result property="nickname" 				column="nickname" 				jdbcType="VARCHAR" />
+		<result property="phone" 					column="phone" 					jdbcType="VARCHAR" />
+		<result property="gender" 					column="gender" 				jdbcType="VARCHAR" />
+		<result property="birth" 					column="birth" 					jdbcType="VARCHAR" />
+		<result property="mail" 					column="mail" 					jdbcType="VARCHAR" />
+		<result property="role" 					column="role" 					jdbcType="VARCHAR"  />
+		<result property="schoolNo" 				column="school_no" 				jdbcType="NUMERIC" />
+		<result property="publicStatus" 			column="public_status" 			jdbcType="VARCHAR" />
+		<result property="deleteStatus" 			column="delete_status" 			jdbcType="VARCHAR" />
+		<result property="profileName" 				column="profile_name" 			jdbcType="VARCHAR" />
+		<result property="schoolName" 				column="school_name" 			jdbcType="VARCHAR" />
+		<result property="selfIntroduction" 		column="self_introduction" 		jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<resultMap type="post" id="postSelectMap">
+ 		<result property="postNo" column="POST_NO" jdbcType="NUMERIC"/>
+ 		<result property="userId" column="USER_ID" jdbcType="VARCHAR"/>
+ 		<result property="postTitle" column="POST_TITLE" jdbcType="VARCHAR"/>
+ 		<result property="postContent" column="POST_CONTENT" jdbcType="VARCHAR"/>
+ 		<result property="postDate" column="POST_DATE" jdbcType="DATE"/>
+ 		<result property="uploadFileName" column="UPLOADFILE_NAME" jdbcType="VARCHAR"/>
+ 		<result property="hitCount" column="HIT_COUNT" jdbcType="NUMERIC"/>
+ 		<result property="likeCount" column="LIKE_COUNT" jdbcType="NUMERIC"/>
+ 		<result property="commentCount" column="COMMENT_COUNT" jdbcType="NUMERIC"/>
+ 		<result property="viewStatus" column="VIEW_STATUS" jdbcType="VARCHAR"/>
+ 		<result property="postCategoryNo" column="POST_CATEGORY_NO" jdbcType="VARCHAR"/>
+ 		<result property="gatherCategoryNo" column="GATHER_CATEGORY_NO" jdbcType="VARCHAR"/>
+ 		<result property="questionStatus" column="QUESTION_STATUS" jdbcType="VARCHAR"/>
+ 		<result property="place" column="PLACE" jdbcType="VARCHAR"/>
+ 		<result property="replyPostNo" column="REPLY_POST_NO" jdbcType="NUMERIC"/>
+ 		<result property="replyContent" column="REPLY_CONTENT" jdbcType="VARCHAR"/>
+ 	</resultMap>
+ 	
+ 	<resultMap id="askSelectMap" type="ask">
+ 	<result property="questionPostNo" column="question_post_no" jdbcType="NUMERIC"/>
+ 	<result property="userId" column="user_id" jdbcType="VARCHAR"/>
+ 	<result property="user.userId" column="user_id" jdbcType="VARCHAR"/>
+ 	<result property="user.name" column="name" jdbcType="VARCHAR"/>
+ 	<result property="user.nickname" column="nickname" jdbcType="VARCHAR"/>
+ 	<result property="user.profileName" column="profile_name" jdbcType="VARCHAR"/>
+ 	
+ 	
+ 	<result property="questionTitle" column="question_title" jdbcType="VARCHAR"/>
+ 	<result property="questionContent" column="question_content" jdbcType="VARCHAR"/>
+ 	<result property="questionDate" column="question_date" jdbcType="DATE"/>
+ 	<result property="questionStatus" column="question_status" jdbcType="VARCHAR"/>
+ 	<result property="answerPostNo" column="answer_post_no" jdbcType="NUMERIC"/>
+ 	<result property="answerTitle" column="answer_post_title" jdbcType="VARCHAR"/>
+ 	<result property="answerContent" column="answer_post_content" jdbcType="VARCHAR"/>
+ 	<result property="answerDate" column="answer_date" jdbcType="DATE"/>
+ 	</resultMap>
+	
+	
+	<!-- 회원가입 -->
+	<insert 	id="addUser"		parameterType="user" >
+	 	INSERT
+		INTO users( user_id , password , name , nickname, phone, gender, birth, mail, role , school_no, public_status, delete_status, profile_name) 
+		VALUES	 (	#{userId} , #{password} , #{name} , #{nickname}, #{phone:VARCHAR}, #{gender:VARCHAR}, #{birth:DATE}, #{mail:VARCHAR},'1' , #{schoolNo:NUMERIC} , 
+							'1' , '1' , #{profileName:VARCHAR} )
+	 </insert>
+	 
+	 	 
+	  <!-- 실명인증여부 -->
+	<update 	id="addRealname"		parameterType="user" >
+	 	UPDATE users
+		<set>
+		user_id = #{userId}
+		role 	= #{role}
+		</set>
+	   	WHERE user_id = #{userId}
+	 </update>
+	 
+	 
+	 <!-- 회원정보 / id 중복체크 -->
+	 <select 	id="getUser"	parameterType="string"	resultMap="userSelectMap">
+		SELECT *
+		FROM users u, (SELECT school_no, school_name
+						FROM school_rank) s
+		WHERE u.school_no = s.school_no AND u.user_id = #{value}
+	 </select>
+	 
+	 
+	 <!-- nickname 중복체크 -->
+	 <select 	id="getUserByNickname"	parameterType="string"	resultMap="userSelectMap">
+		SELECT *
+		FROM users u, (SELECT school_no, school_name
+						FROM school_rank) s
+		WHERE u.school_no = s.school_no AND nickname = #{value}
+	 </select>
+	 
+	 
+	 
+	 
+	 <!-- 회원정보수정 -->
+	 <update	id="updateUser"	parameterType="user" >
+	   	UPDATE users
+	   	<set>
+	   		password		=  #{password} ,
+	   		nickname 		= #{nickname} ,
+	   		school_no		= #{schoolNo} ,
+			phone			= #{phone},
+			mail			= #{mail},
+			public_status 	= #{publicStatus},
+			profile_name	= #{profileName}
+		</set>
+	   	WHERE user_id = #{userId}
+	 </update>
+		 
+		 
+	<!-- 전체회원목록 test -->
+	<select  id="getUserList"  parameterType="search"	resultMap="userSelectMap">
+		SELECT *
+	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
+	  			FROM (	SELECT u.user_id , u.password , u.name , u.nickname, u.phone, u.gender, u.birth, u.mail, u.role , 
+	  							u.school_no, u.public_status, u.delete_status, u.profile_name, s.school_name 
+	  					 FROM users u , (	SELECT school_no, school_name
+                            				 FROM school_rank) s 
+               			 WHERE u.school_no = s.school_no ) inner_table
+				WHERE ROWNUM &lt;= #{endRowNum} )
+		WHERE row_seq BETWEEN #{startRowNum} AND #{endRowNum} 
+	 </select>
+	 
+
+	 
+	 
+	 
+	 <!-- 회원검색 test -->
+	<select id="getUserListSearch" 	parameterType="search" 	resultMap="userSelectMap">
+		SELECT *
+		FROM ( SELECT inner_table.* , ROWNUM AS row_seq
+				FROM (SELECT user_id , name , mail
+						FROM users
+						<if test="searchCondition != null">
+							<where>
+								<if test="searchCondition == 0 and searchKeyword !='' ">
+									user_id LIKE '%'|| #{searchKeyword}||'%'
+								</if>
+								<if test="searchCondition == 1 and searchKeyword !='' ">
+									name LIKE '%'|| #{searchKeyword}||'%'
+								</if>
+							</where>
+						</if>
+						ORDER BY user_id ) inner_table
+				WHERE ROWNUM &lt;= #{endRowNum} )
+		WHERE row_seq BETWEEN #{startRowNum} AND #{endRowNum} 
+	</select>
+
+
+	 
+	 <!-- 프로필 정보 
+	  <select 	id="getProfile"	parameterType="string"	resultMap="userSelectMap">
+		SELECT
+		user_id , name , phone, gender, birth, mail, role , school_no, public_status, profile_name	
+		FROM users 
+		WHERE user_id = #{value}
+	 </select>
+	 -->
+	 
+	 
+	 <!-- 프로필 수정 -->
+	 <update	id="updateProfile"	parameterType="user" >
+	   	UPDATE users
+	   	<set>
+	   		name = #{name},
+	   		nickname = #{nickname},
+	   		school_no = #{schoolNo},
+	   		mail = #{mail},
+	   		phone = #{phone},
+	   		self_introduction	= #{selfIntroduction:VARCHAR},
+			profile_name 		= #{profileName},
+			public_status		= #{publicStatus}
+		</set>
+	   	WHERE user_id = #{userId}
+	 </update>
+	 
+	 
+	 <!-- 문의사항 등록 -->
+	 <insert id="addQuestions"	parameterType="post" >
+	 INSERT
+		INTO post (post_category_no, post_no, user_id, post_title, post_content, post_date, hit_count, like_count, comment_count, view_status, question_status, gather_category_no)
+        values ('5', SEQ_POST_POST_NO.NEXTVAL, #{userId},#{postTitle},#{postContent},SYSDATE,0,0,0,'1',1, #{gatherCategoryNo})
+	 </insert>
+	 
+	 
+	 
+	 
+	 <!-- 문의사항 수정 -->
+	 <update	id="updateQuestions"	parameterType="post">
+	   	UPDATE post
+	   	<set>
+	   		post_title 			= #{postTitle} ,
+	   		post_content		= #{postContent} ,
+	   		view_status 		= #{viewStatus}	,   
+	   		GATHER_CATEGORY_NO  = #{gatherCategoryNo}
+	    	</set>
+	   	WHERE post_no = #{postNo}
+	 </update>
+	 
+	 
+	 <!-- 문의사항 내용 -->
+	 <select 	id="getQuestions"	parameterType="int"	resultMap="postSelectMap">
+		SELECT *
+        FROM post
+		WHERE post_no = #{postNo} AND post_category_no = '5'
+	 </select>
+	 
+	 
+	 <!-- 나의 문의사항 목록 -->
+	 <select 	id="getUserQuestions"	parameterType="map"	resultMap="postSelectMap">
+		SELECT * 
+        FROM (  SELECT inner_table.* , ROWNUM AS row_seq
+                  FROM ( SELECT post_no , post_title, post_content, post_date , QUESTION_STATUS, reply_post_no
+                            FROM post
+							WHERE user_id = #{userId} AND post_category_no = '5' AND post_title !='문의사항답변등록'
+							ORDER BY post_date DESC) 
+				inner_table)
+		WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum} 
+		
+	 </select>
+	 
+	 
+	 <!-- 전체 문의사항 목록  -->
+	<select  id="getUserQuestionsList"  parameterType="search"	resultMap="postSelectMap">
+	  	SELECT *
+	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
+	  					FROM		(	SELECT * FROM post 
+	  					where post_title !='문의사항답변등록' AND post_category_no ='5'
+	  					ORDER BY post_date DESC ) inner_table
+						WHERE ROWNUM &lt;= #{endRowNum} )
+		WHERE row_seq BETWEEN #{startRowNum} AND #{endRowNum} 
+	 </select>
+	 
+	 
+	  <!-- 내가 쓴 게시글  
+	<select  id="getUserPostList"  parameterType="string"	resultMap="userSelectMap">
+	  	SELECT
+		post_no
+	  	FROM post
+		WHERE user_id = #{userId} AND post_category_no = '2'
+	 </select>
+	 -->
+	 
+	  <!-- 내가 쓴 댓글  
+	<select  id="getUserCommentList"  parameterType="string"	resultMap="userSelectMap">
+		SELECT comment_no
+	  	FROM commentt
+		WHERE user_id = #{userId}
+	 </select>
+	 -->
+	 
+	  <!-- 내가 좋아요한 글  
+	<select  id="getUserLikePostList"  parameterType="string"	resultMap="userSelectMap">
+		SELECT like_no
+	  	FROM likey
+		WHERE user_id = #{userId}
+	 </select>
+	 -->
+
+
+	 <!-- mail로 id 불러오기 -->
+	 <select 	id="getUserByMail"	parameterType="string"	resultMap="userSelectMap">
+		SELECT user_id, mail
+		FROM users
+		WHERE mail = #{value}
+	 </select>
+
+
+
+	 <!-- ID 찾기 -->
+	 <select 	id="findId"	parameterType="string"	resultMap="userSelectMap">
+		SELECT
+		user_id 		
+		FROM users 
+		WHERE mail = #{value}
+	 </select>
+	 
+	 
+	  <!-- ID로 PW 찾기 -->
+	 <select 	id="findPwById"	parameterType="string"	resultMap="userSelectMap">
+		SELECT
+		password		
+		FROM users 
+		WHERE user_id = #{value}
+	 </select>
+	 
+	 
+	  <!-- mail로 PW 찾기 -->
+<!-- 	 <select 	id="findPwByEmail"	parameterType="string"	resultMap="userSelectMap"> -->
+<!-- 		SELECT -->
+<!-- 		password		 -->
+<!-- 		FROM users  -->
+<!-- 		WHERE mail = #{value} -->
+<!-- 	 </select> -->
+	 
+	 
+	 <!-- 회원탈퇴 flag -->
+	 <update	id="deleteUser"	parameterType="user" >
+	   	UPDATE users
+	   	<set>
+			delete_status 	= '2'
+		</set>
+	   	WHERE user_id = #{userId}
+	 </update>
+	 
+	 <!-- 전체회원 수 출력 -->
+	 <select  id="getTotalCountUser"  parameterType="map"	 resultType="int">
+	  	select count(*)  from(select * from users)
+	 </select>
+	 
+	 <!-- 페이징처리 내가올린 문의사항 갯수 -->	 
+	 <select  id="getTotalCount"  parameterType="map"	 resultType="int">
+	  	select count(*) from (SELECT * 
+        FROM (  SELECT inner_table.* , ROWNUM AS row_seq
+                  FROM ( SELECT post_no , post_title, post_content, post_date , QUESTION_STATUS, reply_post_no
+                            FROM post
+							WHERE user_id = #{userId} AND post_category_no = '5'AND post_title !='문의사항답변등록'
+							ORDER BY post_date DESC) 
+				inner_table)
+		)
+	 </select>
+	 <!--  전체 회원의 문의사항 갯수 -->
+	  <select  id="getTotalCount2"  parameterType="search"	 resultType="int">
+	  	select count(*) from (SELECT * 
+        FROM (  SELECT inner_table.* , ROWNUM AS row_seq
+                  FROM ( SELECT post_no , post_title, post_content, post_date , QUESTION_STATUS, reply_post_no
+                            FROM post
+							WHERE post_category_no = '5' AND post_title !='문의사항답변등록'
+							ORDER BY post_date DESC) 
+				inner_table)
+		)
+	 </select>
+	 
+	 
+	 
+	  <!-- id 중복체크 test -->
+	 <select 	id="checkDuplicationUserId"	parameterType="string"	resultMap="userSelectMap">
+		SELECT COUNT(*)
+		FROM users
+		WHERE user_id = #{value}
+	 </select>
+	 
+	  <!-- nickname 중복체크 test -->
+	 <select 	id="checkDuplicationNickname"	parameterType="string"	resultMap="userSelectMap">
+		SELECT COUNT(*)
+		FROM users
+		WHERE nickname = #{value}
+	 </select>
+	 
+	  <!-- mail 중복체크 test -->
+	 <select 	id="checkDuplicationMail"	parameterType="string"	resultMap="userSelectMap">
+		SELECT COUNT(*)
+		FROM users
+		WHERE mail = #{value}
+	 </select>
+	 
+	 
+	 
+	 <!-- 문자 보내기 	 
+	 <select  id="sendSMS"
+	 -->
+	 
+	 <!-- 인증번호확인 	 
+	 <select  id="confirmAuthCode"
+	 -->
+ 	
+ 	
+ 	<update id="updatePassword" parameterType="user">
+ 		UPDATE users
+ 		SET password = #{password}
+ 		WHERE user_id = #{userId}
+ 	</update>
+ 	
+ 	<update id="updatePublicStatus" parameterType="user">
+ 		UPDATE users
+ 		SET public_status = #{publicStatus}
+ 		WHERE user_id = #{userId}
+ 	</update>
+ 	
+ 	<!-- ASK 질문에 답변 등록-->
+	<insert id="replyQuestion" parameterType="ask">
+	INSERT INTO post (post_no, user_id, post_title, post_content, post_date, view_status, post_category_no, question_status) 
+	VALUES (seq_post_post_no.NEXTVAL, #{userId},#{questionTitle:VARCHAR}, #{answerContent}, SYSDATE, '1', '5', NULL)
+	</insert>
+	
+	<!-- ASK 질문글의 questionStatus 업데이트 미답변('1')=>답변('2') -->
+	<update id="updateQuestionStatus" parameterType="int">
+		UPDATE post 
+		SET reply_post_no = seq_post_post_no.CURRVAL, question_status = '2' 
+		WHERE post_no = #{value}
+	</update>
+	
+	<!--  문의사항 질문에대한 답변글 가져오기 -->
+	
+	<select id="getAnswer"	parameterType="int"	resultMap="postSelectMap">
+		select * from post where post_category_no = '5' and post_no = #{value}
+	 </select>
+	
+	
+	
+	<!-- 	날씨  -->
+	<select id="getWeather" parameterType="String">
+		select c.couple_no , u.user_id  , s.school_address , urr.user_id   ,urr.school_address 
+		from school_rank s, users u, couple c,
+                                    ( select sr.school_address, ur.user_id , cc.couple_no
+                                     from school_rank sr, users ur , couple cc
+                                     where ur.school_no = sr.school_no AND ur.user_id = #{value} ) urr
+  		where u.school_no = s.school_no AND u.user_id = #{value}   AND urr.couple_no  =    c.couple_no ;
+	</select>
+	
+	
+	
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="SocialMapper">
+ 	
+ 	<resultMap id="postSelectMap" type="post">
+ 		<result property="postNo" column="post_no" jdbcType="NUMERIC"/>
+ 		<result property="userId" column="user_id" jdbcType="VARCHAR"/>
+ 		<result property="user.userId" column="user_id" jdbcType="VARCHAR"/>
+	 	<result property="user.name" column="name" jdbcType="VARCHAR"/>
+	 	<result property="user.nickname" column="nickname" jdbcType="VARCHAR"/>
+	 	<result property="user.profileName" column="profile_name" jdbcType="VARCHAR"/>
+ 		<result property="uploadFileName" column="uploadfile_name" jdbcType="VARCHAR"/>
+ 		<result property="postTitle" column="post_title" jdbcType="VARCHAR"/>
+ 		<result property="postContent" column="post_content" jdbcType="VARCHAR"/>
+ 		<result property="postDate" column="post_date" jdbcType="DATE"/>
+ 		<result property="viewStatus" column="view_status" jdbcType="VARCHAR"/>
+ 		<result property="postCategoryNo" column="post_category_no" jdbcType="VARCHAR"/>
+ 		<result property="questionStatus" column="question_status" jdbcType="VARCHAR"/>
+ 		<result property="replyPostNo" column="reply_post_no" jdbcType="NUMERIC"/>
+ 		<result property="commentCount" column="comment_count" jdbcType="NUMERIC"/>
+ 	</resultMap>
+ 	
+ 	<resultMap id="askSelectMap" type="ask">
+ 	<result property="questionPostNo" column="question_post_no" jdbcType="NUMERIC"/>
+ 	<result property="userId" column="user_id" jdbcType="VARCHAR"/>
+ 	<result property="user.userId" column="user_id" jdbcType="VARCHAR"/>
+ 	<result property="user.name" column="name" jdbcType="VARCHAR"/>
+ 	<result property="user.nickname" column="nickname" jdbcType="VARCHAR"/>
+ 	<result property="user.profileName" column="profile_name" jdbcType="VARCHAR"/>
+ 	
+ 	
+ 	<result property="questionTitle" column="question_title" jdbcType="VARCHAR"/>
+ 	<result property="questionContent" column="question_content" jdbcType="VARCHAR"/>
+ 	<result property="questionDate" column="question_date" jdbcType="DATE"/>
+ 	<result property="questionStatus" column="question_status" jdbcType="VARCHAR"/>
+ 	<result property="answerPostNo" column="answer_post_no" jdbcType="NUMERIC"/>
+ 	<result property="answerTitle" column="answer_post_title" jdbcType="VARCHAR"/>
+ 	<result property="answerContent" column="answer_post_content" jdbcType="VARCHAR"/>
+ 	<result property="answerDate" column="answer_date" jdbcType="DATE"/>
+ 	</resultMap>
+ 	
+ 	<resultMap type="notification" id="notificationSelectMap">
+		<result property="notiNo" column="NOTI_NO" jdbcType="NUMERIC"/>
+		
+		<result property="sender.userId" column="SENDER_ID" jdbcType="VARCHAR"/>
+		<result property="sender.name" column="NAME" jdbcType="VARCHAR"/>
+		<result property="sender.nickname" column="NICKNAME" jdbcType="VARCHAR"/>
+		<result property="sender.profileName" column="PROFILE_NAME" jdbcType="VARCHAR"/>
+		
+		<result property="senderId" column="SENDER_ID" jdbcType="VARCHAR"/>
+		<result property="receiverId" column="RECEIVER_ID" jdbcType="VARCHAR"/>
+		<result property="postNo" column="POST_NO" jdbcType="NUMERIC"/>
+		<result property="notiOrigin" column="NOTI_ORIGIN" jdbcType="VARCHAR"/>
+		<result property="notiCode" column="NOTI_CODE" jdbcType="VARCHAR"/>
+		<result property="notiDate" column="NOTI_DATE" jdbcType="VARCHAR"/>
+	</resultMap>
+ 	
+ 	
+ 	<insert id="addTimeline" parameterType="post">
+ 		INSERT INTO post 
+		(post_no, user_id, uploadfile_name, post_content, post_date, view_status, post_category_no) 
+		VALUES (seq_post_post_no.NEXTVAL, #{userId}, #{uploadFileName:VARCHAR}, #{postContent}, SYSDATE, #{viewStatus:VARCHAR}, '4')
+ 	</insert>
+ 	
+ 	<select id="getTimeline" parameterType="int" resultMap="postSelectMap">
+ 		SELECT p.post_no, p.user_id, p.uploadfile_name, p.post_title, p.post_content, p.post_date, p.view_status, p.post_category_no, u.name, u.nickname, u.profile_name
+ 		FROM post p, users u
+		WHERE post_no = #{value}
+		AND p.user_id = u.user_id
+ 	</select>
+ 	
+ 	<!-- searchCondition => 0 : 공개된 것만  1 : 나만보기포함 -->
+	<select id="getTimelineList" parameterType="map" resultMap="postSelectMap">
+		SELECT * 
+		FROM ( SELECT inner_table.* , ROWNUM AS row_seq
+				FROM (  SELECT p.post_no, p.user_id, p.uploadfile_name, p.post_title, p.post_content, p.post_date, p.view_status, p.post_category_no, p.comment_count, u.name, u.nickname, u.profile_name 
+							FROM post p, users u
+		                    WHERE post_category_no = '4'
+		                    AND p.user_id = #{userId}
+		                    <if test="search.searchCondition == 0">
+		                    AND view_status = '1'
+		                    </if>
+		                    <if test="search.searchCondition == 1">
+		                    AND view_status != '3'
+		                    </if>
+		                    AND p.user_id = u.user_id
+		                    ORDER BY post_no desc) inner_table 
+				WHERE ROWNUM &lt; = #{search.endRowNum} ) 
+		WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	</select>
+	
+	<update id="updateTimeline" parameterType="post">
+		UPDATE post
+		SET post_content = #{postContent},
+		    uploadfile_name = #{uploadFileName:VARCHAR},
+		    view_status = #{viewStatus}
+		WHERE post_no = #{postNo}
+	</update>
+	
+	<update id="deleteTimeline" parameterType="int">
+		UPDATE post
+		SET view_status = '3'
+		WHERE post_no = #{value}
+	</update>
+	
+	<select id="getTimelineTotalCount" parameterType="map" resultType="int">
+		SELECT COUNT(*)
+		FROM (
+				SELECT * FROM post
+		                    WHERE post_category_no = '4'
+		                    AND user_id = #{userId}
+		                    <if test="search.searchCondition == 0">
+		                    AND view_status = '1'
+		                    </if>
+		                    <if test="search.searchCondition == 1">
+		                    AND view_status != '3'
+		                    </if>
+		                    ORDER BY post_no
+		) countTable
+	</select> 
+	 
+	<!-- ASK 질문글 등록 -->
+	<insert id="addQuestion" parameterType="ask">
+		INSERT INTO post 
+		(post_no, user_id, post_title, post_content, post_date, view_status, post_category_no, question_status, reply_post_no) 
+		VALUES (seq_post_post_no.NEXTVAL, #{userId}, #{questionTitle}, #{questionContent}, SYSDATE, '1', '3', '1', NULL)
+	</insert>
+	
+	<!-- ASK 질문에 답변 등록-->
+	<insert id="replyQuestion" parameterType="ask">
+	INSERT INTO post (post_no, user_id, post_title, post_content, post_date, view_status, post_category_no, question_status) 
+	VALUES (seq_post_post_no.NEXTVAL, #{userId},#{questionTitle:VARCHAR}, #{answerContent}, SYSDATE, '1', '3', NULL)
+	</insert>
+	
+	<!-- ASK 질문글의 questionStatus 업데이트 미답변('1')=>답변('2') -->
+	<update id="updateQuestionStatus" parameterType="int">
+		UPDATE post 
+		SET reply_post_no = seq_post_post_no.CURRVAL, question_status = '2' 
+		WHERE post_no = #{value}
+	</update>
+	
+	<select id="getAskQuestionList" parameterType="map" resultMap="askSelectMap">
+		SELECT * 
+		FROM ( SELECT inner_table.* , ROWNUM AS row_seq
+				FROM (  SELECT
+					 	post_no AS question_post_no,
+				        user_id AS user_id,
+				        post_title AS question_title,
+				        post_content AS question_content,
+				        post_date AS question_date,
+				        question_status
+					FROM post 
+					WHERE post_category_no = '3'
+					AND question_status = '1'
+					AND user_id = #{userId}
+					ORDER BY post_no desc) inner_table 
+				WHERE ROWNUM &lt; = #{search.endRowNum} ) 
+		WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	</select>
+	
+	
+	<!-- ASK 미답변 질문목록 / 답변된 질문목록 GET ==> questionStatus = '1' : 미답변 '2' : 답변  -->
+	<select id="getAskList" parameterType="map" resultMap="askSelectMap">
+		SELECT * 
+		FROM ( SELECT inner_table.* , ROWNUM AS row_seq
+				FROM (  SELECT  
+				p1.post_no AS question_post_no,
+		        p1.user_id AS user_id,
+		        p1.post_title AS question_title,
+		        p1.post_content AS question_content,
+		        p1.post_date AS question_date,
+		        p1.question_status,
+		        p2.post_no AS answer_post_no,
+		        p2.post_title AS answer_post_title,
+		        p2.post_content AS answer_post_content,
+		        p2.post_date AS answer_date,
+		        u.name,
+                u.nickname,
+                u.profile_name
+		FROM post p1, post p2, users u
+		WHERE p1.reply_post_no = p2.post_no
+		AND p1.post_category_no = '3'
+		AND p1.question_status = '2'
+		AND p1.user_id = #{userId}
+		AND p1.user_id = u.user_id
+		ORDER BY p1.post_no desc) inner_table 
+				WHERE ROWNUM &lt; = #{search.endRowNum} ) 
+		WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	</select>
+	
+	<delete id="rejectQuestion" parameterType="int">
+		DELETE FROM post
+		WHERE post_no = #{value}
+		AND question_status = '1'
+	</delete>
+	
+	<!-- question_status = '1' : 미답변  '2' : 답변 -->
+	<select id="getAskTotalCount" parameterType="map" resultType="int">
+		SELECT COUNT(*)
+		FROM (
+				SELECT * FROM post 
+					WHERE post_category_no = '3'
+					AND question_status = #{questionStatus}
+					AND user_id = #{userId}
+					ORDER BY post_no desc
+		) countTable
+	</select>
+	
+	<insert id="addNoti" parameterType="notification">
+		INSERT INTO notification
+		VALUES (SEQ_NOTIFICATION_NOTI_NO.NEXTVAL, 
+		#{senderId}, 
+		#{receiverId}, 
+		SYSDATE,
+		#{notiOrigin}, 
+		#{notiCode}, 
+		<if test="postNo == 0">null</if>
+		<if test="postNo != 0">#{postNo:NUMERIC}</if>)
+	</insert>
+	
+	<select id="getNotiList" parameterType="map" resultMap="notificationSelectMap">
+		SELECT * 
+		FROM ( SELECT inner_table.* , ROWNUM AS row_seq
+				FROM ( SELECT noti_no, sender_id, receiver_id, post_no, noti_origin, noti_code, to_char(noti_date, 'yyyy-mm-dd hh24:mi:ss') as noti_date,  name, nickname, profile_name
+						FROM notification n, users u
+						WHERE receiver_id = #{userId}
+						AND n.sender_id = u.user_id
+						ORDER BY noti_date DESC) inner_table 
+				WHERE ROWNUM &lt; = #{search.endRowNum} ) 
+		WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	</select>
+	
+	<delete id="deleteNoti" parameterType="int">
+		DELETE FROM notification
+		WHERE noti_no = #{notiNo}
+	</delete>
+
+	<delete id="deleteNotiAll" parameterType="string">
+		DELETE FROM notification
+		WHERE receiver_id = #{userId}
+	</delete>
+	
+	<select id="getTotalNotiList" parameterType="string" resultType="int">
+		SELECT COUNT(*)
+		FROM (
+			SELECT *
+			FROM notification
+			WHERE receiver_id = #{userId} 
+		) countTable
+	</select>
+	
+	<insert id="addDefaultItem" parameterType="item">
+		insert
+ 		into item(item_no, first_user_id, item_category, item_default)
+ 		values(seq_item_item_no.nextval,
+ 		#{firstUserId:VARCHAR},
+ 		#{itemCategory:VARCHAR},
+ 		1)	
+	</insert>
+	
+	
+</mapper>
