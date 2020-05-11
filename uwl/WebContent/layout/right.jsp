@@ -17,7 +17,7 @@
     <script src="https://kit.fontawesome.com/6ffe1f5c93.js" crossorigin="anonymous"></script>
     <script src="https://cdn.iamport.kr/js/iamport.payment-1.1.5.js" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.12/summernote-bs4.js"></script>
-    <script src="http://192.168.0.23:82/socket.io/socket.io.js"></script>
+   <!--  <script src="http://192.168.0.23:82/socket.io/socket.io.js"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9.7.2/dist/sweetalert2.all.min.js"></script>
     
     
@@ -1103,10 +1103,10 @@
     	
         $(function() {
   			
-        	var newUser = "${sessionScope.user.userId}";
+        	/* var newUser = "${sessionScope.user.userId}";
        		socket = io.connect("192.168.0.23:82");	//소켓연결 
        		console.log('node.js Server Connection...');
-       		socket.emit("new",newUser);
+       		socket.emit("new",newUser); */
 	        $('div.chattingIcon a').on('click', function() {
 	        	$('div.chattingIcon > div').css({
 	        		"display" : "none"
